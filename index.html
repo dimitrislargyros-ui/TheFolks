@@ -418,34 +418,43 @@
     .focus-bar-week:active { background:rgba(200,170,110,.22); }
 
     /* ── WEEK VIEW ── */
-    .wv-bg { position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:500; display:flex; flex-direction:column; opacity:0; pointer-events:none; transition:opacity .2s; }
+    .wv-bg { position:fixed; inset:0; background:var(--bg); z-index:500; display:flex; flex-direction:column; opacity:0; pointer-events:none; transition:opacity .18s; }
     .wv-bg.open { opacity:1; pointer-events:all; }
-    .wv-panel { flex:1; background:var(--bg); display:flex; flex-direction:column; overflow:hidden; transform:translateY(32px); transition:transform .22s; }
+    .wv-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; transform:translateY(24px); transition:transform .2s; }
     .wv-bg.open .wv-panel { transform:translateY(0); }
-    .wv-top { display:flex; align-items:center; gap:8px; padding:13px 14px 10px; border-bottom:1px solid var(--border2); flex-shrink:0; background:var(--sur); }
-    .wv-barber-pill { font-size:11px; font-weight:800; color:var(--gold); letter-spacing:.3px; flex:1; }
-    .wv-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; line-height:1; padding:2px 4px; }
-    .wv-nav-row { display:flex; align-items:center; gap:8px; padding:8px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
-    .wv-nav-btn { background:var(--sur2); border:1.5px solid var(--border2); color:var(--txt); border-radius:10px; width:36px; height:36px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .wv-top { display:flex; align-items:center; gap:8px; padding:12px 14px 10px; border-bottom:1px solid var(--border2); flex-shrink:0; background:var(--sur); }
+    .wv-barber-pill { font-size:12px; font-weight:800; color:var(--gold); letter-spacing:.3px; flex:1; }
+    .wv-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; line-height:1; padding:2px 6px; }
+    .wv-nav-row { display:flex; align-items:center; gap:8px; padding:7px 12px; border-bottom:1px solid var(--border2); flex-shrink:0; background:var(--sur); }
+    .wv-nav-btn { background:var(--sur2); border:1.5px solid var(--border2); color:var(--txt); border-radius:10px; width:34px; height:34px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .wv-nav-btn:active { background:var(--sur3); }
-    .wv-week-label { flex:1; text-align:center; font-size:13px; font-weight:800; color:var(--txt); }
-    .wv-body { flex:1; overflow-y:auto; padding:10px 12px 24px; display:flex; flex-direction:column; gap:8px; -webkit-overflow-scrolling:touch; }
-    .wv-day { background:var(--sur); border:1px solid var(--border2); border-radius:14px; overflow:hidden; }
-    .wv-day.wv-today { border-color:var(--gold); }
-    .wv-day-hdr { display:flex; align-items:center; gap:8px; padding:9px 13px 7px; border-bottom:1px solid var(--border); }
-    .wv-day.wv-today .wv-day-hdr { background:rgba(200,170,110,.07); }
-    .wv-dname { font-size:13px; font-weight:800; color:var(--txt); min-width:36px; }
-    .wv-ddate { font-size:12px; color:var(--txt2); flex:1; }
-    .wv-today-tag { font-size:9px; font-weight:800; color:var(--gold); background:rgba(200,170,110,.18); border-radius:5px; padding:2px 6px; letter-spacing:.3px; }
-    .wv-events { padding:7px 10px 9px; display:flex; flex-direction:column; gap:4px; }
-    .wv-ev { display:flex; align-items:center; gap:8px; padding:6px 9px; border-radius:8px; border-left:3px solid transparent; }
-    .wv-ev-booked { background:rgba(255,255,255,.03); }
-    .wv-ev-free { background:rgba(39,174,96,.07); border-left-color:#27ae60 !important; }
-    .wv-ev-time { font-size:11px; font-weight:700; color:var(--txt); min-width:88px; flex-shrink:0; }
-    .wv-ev-label { font-size:12px; color:var(--txt2); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .wv-ev-free .wv-ev-label { color:#3dbd72; font-weight:700; }
-    .wv-free-day { padding:12px 13px; font-size:12px; color:#3dbd72; font-weight:700; }
-    .wv-no-events { padding:12px 13px; font-size:12px; color:var(--muted); }
+    .wv-week-label { flex:1; text-align:center; font-size:12px; font-weight:800; color:var(--txt); }
+    /* Day header row */
+    .wv-dhdr { display:flex; flex-shrink:0; border-bottom:1px solid var(--border2); background:var(--sur2); }
+    .wv-dhdr-gut { flex-shrink:0; width:var(--tw); }
+    .wv-dhdr-cols { flex:1; display:flex; scrollbar-gutter:stable; }
+    .wv-dhdr-col { flex:1; text-align:center; padding:6px 2px 5px; border-left:1px solid var(--border); min-width:0; }
+    .wv-dhdr-dname { font-size:9px; font-weight:700; color:var(--txt2); text-transform:uppercase; letter-spacing:.3px; }
+    .wv-dhdr-dnum { font-size:14px; font-weight:800; color:var(--txt); line-height:1.2; display:inline-block; width:24px; border-radius:50%; text-align:center; }
+    .wv-dhdr-col.wv-col-today .wv-dhdr-dnum { background:var(--gold); color:#0a0c10; }
+    /* Grid */
+    .wv-grid { flex:1; display:flex; overflow-y:scroll; overflow-x:hidden; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:var(--border2) var(--bg); -webkit-overflow-scrolling:touch; }
+    .wv-grid::-webkit-scrollbar { width:4px; }
+    .wv-grid::-webkit-scrollbar-track { background:var(--bg); }
+    .wv-grid::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+    .wv-tgut { width:var(--tw); flex-shrink:0; display:flex; flex-direction:column; }
+    .wv-ttick { height:48px; flex-shrink:0; display:flex; align-items:flex-start; justify-content:flex-end; padding:3px 8px 0 0; font-size:9px; color:var(--muted); }
+    .wv-ttick.half { visibility:hidden; }
+    .wv-dcols { flex:1; display:flex; }
+    .wv-dcol { flex:1; display:flex; flex-direction:column; border-left:1px solid var(--border); position:relative; min-width:0; }
+    .wv-dcol.wv-col-today { background:rgba(200,170,110,.018); }
+    .wv-dslot { height:48px; flex-shrink:0; border-bottom:1px solid var(--border); position:relative; }
+    .wv-dslot.hr { border-bottom-color:var(--border2); }
+    /* Chips in week view */
+    .wv-chip { position:absolute; left:2px; right:2px; top:2px; border-radius:5px; padding:2px 4px; font-size:9px; font-weight:700; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; border-left:3px solid; color:var(--txt); z-index:2; }
+    /* Now line */
+    .wv-now { position:absolute; left:0; right:0; height:2px; background:var(--gold); z-index:5; pointer-events:none; }
+    .wv-now::before { content:''; position:absolute; left:-1px; top:-3px; width:7px; height:7px; border-radius:50%; background:var(--gold); }
 
     /* ── THEME PICKER ── */
     .theme-grid { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:4px; }
@@ -587,7 +596,14 @@
       <div class="wv-week-label" id="wvWeekLabel"></div>
       <button class="wv-nav-btn" id="wvNext">›</button>
     </div>
-    <div class="wv-body" id="wvBody"></div>
+    <div class="wv-dhdr">
+      <div class="wv-dhdr-gut"></div>
+      <div class="wv-dhdr-cols" id="wvDhdrCols"></div>
+    </div>
+    <div class="wv-grid" id="wvGrid">
+      <div class="wv-tgut" id="wvTgut"></div>
+      <div class="wv-dcols" id="wvDcols"></div>
+    </div>
   </div>
 </div>
 
@@ -1611,6 +1627,12 @@ function openWeekView(){
   wvOffset=0;
   renderWeekView();
   $('wvBg').classList.add('open');
+  // Scroll to current time
+  requestAnimationFrame(()=>{
+    const now=new Date(),h=now.getHours(),m=now.getMinutes();
+    const top=Math.max(0,((h-DAY_START)*60+m)/30*SPX-80);
+    $('wvGrid').scrollTop=top;
+  });
 }
 
 function renderWeekView(){
@@ -1624,15 +1646,38 @@ function renderWeekView(){
   $('wvBarberName').textContent=`◎ ${barber.name}`;
   $('wvWeekLabel').textContent=`${fmtShort(mon)} – ${fmtShort(sun)}`;
   const dayNames=currentLang==='el'?WV_DAY_EL:WV_DAY_EN;
-  const body=$('wvBody');body.innerHTML='';
   const todayStr=fmtD(new Date());
 
+  // Build day headers
+  const dhdrCols=$('wvDhdrCols');dhdrCols.innerHTML='';
+  for(let i=0;i<7;i++){
+    const day=new Date(mon);day.setDate(mon.getDate()+i);
+    const isT=fmtD(day)===todayStr;
+    const col=document.createElement('div');
+    col.className='wv-dhdr-col'+(isT?' wv-col-today':'');
+    col.innerHTML=`<div class="wv-dhdr-dname">${dayNames[day.getDay()]}</div><div class="wv-dhdr-dnum">${day.getDate()}</div>`;
+    dhdrCols.appendChild(col);
+  }
+
+  // Build time gutter
+  const tgut=$('wvTgut');tgut.innerHTML='';
+  for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
+    const t=document.createElement('div');
+    t.className='wv-ttick'+(m===0?'':' half');
+    t.textContent=m===0?`${h}:00`:'';
+    tgut.appendChild(t);
+  }
+
+  // Build day columns
+  const dcols=$('wvDcols');dcols.innerHTML='';
   for(let i=0;i<7;i++){
     const day=new Date(mon);day.setDate(mon.getDate()+i);
     const dayStr=fmtD(day);
     const isT=dayStr===todayStr;
+    const col=document.createElement('div');
+    col.className='wv-dcol'+(isT?' wv-col-today':'');
 
-    // Build covered set (multi-span)
+    // Covered slots (multi-span)
     const covered=new Set();
     for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
       const v=data[`${dayStr}|${bid}|${h}|${m}`];
@@ -1642,65 +1687,44 @@ function renderWeekView(){
       if(sp>1)for(let s=1;s<sp;s++){const mm=(h-DAY_START)*60+m+s*30,ch=DAY_START+Math.floor(mm/60),cm=mm%60;if(ch<DAY_END)covered.add(`${ch}_${cm}`);}
     }
 
-    // Build events list (merge free slots)
-    const events=[];
-    let freeStart=null;
+    // Render slots
     for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
-      if(covered.has(`${h}_${m}`))continue;
-      const v=data[`${dayStr}|${bid}|${h}|${m}`];
-      const rec=v===undefined?getRecForSlot(bid,day,h,m):null;
-      const booked=isExplicit(v)||!!rec;
-      if(booked){
-        if(freeStart!==null){events.push({type:'free',sh:freeStart.h,sm:freeStart.m,eh:h,em:m});freeStart=null;}
-        const sp=isExplicit(v)?getSpan(v):(rec.span||1);
-        const name=isExplicit(v)?getName(v):rec.name;
-        const endMin=(h-DAY_START)*60+m+sp*30;
-        const eh=DAY_START+Math.floor(endMin/60),em=endMin%60;
-        events.push({type:'booked',sh:h,sm:m,eh,em,name});
-      }else{
-        if(freeStart===null)freeStart={h,m};
+      const slot=document.createElement('div');
+      slot.className='wv-dslot'+(m===0?' hr':'');
+      if(!covered.has(`${h}_${m}`)){
+        const v=data[`${dayStr}|${bid}|${h}|${m}`];
+        const rec=v===undefined?getRecForSlot(bid,day,h,m):null;
+        if(isExplicit(v)||rec){
+          const name=isExplicit(v)?getName(v):rec.name;
+          const sp=isExplicit(v)?getSpan(v):(rec?.span||1);
+          const chip=document.createElement('div');
+          chip.className='wv-chip';
+          chip.style.cssText=`background:${barber.color}28;border-left-color:${barber.color};height:${sp*SPX-5}px;`;
+          chip.textContent=name;
+          slot.appendChild(chip);
+        }
+      }
+      col.appendChild(slot);
+    }
+
+    // Now-line on today
+    if(isT){
+      const now=new Date(),nh=now.getHours(),nm=now.getMinutes();
+      if(nh>=DAY_START&&nh<DAY_END){
+        const nl=document.createElement('div');
+        nl.className='wv-now';
+        nl.style.top=`${((nh-DAY_START)*60+nm)/30*SPX}px`;
+        col.appendChild(nl);
       }
     }
-    if(freeStart!==null)events.push({type:'free',sh:freeStart.h,sm:freeStart.m,eh:DAY_END,em:0});
-
-    const fmt=(h,m)=>`${String(h).padStart(2,'0')}:${m===0?'00':String(m).padStart(2,'0')}`;
-    const dateStr=day.toLocaleDateString(loc,{day:'numeric',month:'short'});
-    const todayLbl=currentLang==='el'?'ΣΗΜΕΡΑ':'TODAY';
-    const freeDayLbl=currentLang==='el'?'✓ Ελεύθερη μέρα':'✓ Free day';
-    const freeLbl=currentLang==='el'?'Ελεύθερο':'Free';
-
-    let evHTML='';
-    const freeEvents=events.filter(e=>e.type==='free');
-    const bookedEvents=events.filter(e=>e.type==='booked');
-
-    if(bookedEvents.length===0){
-      evHTML=`<div class="wv-free-day">${freeDayLbl}</div>`;
-    }else{
-      events.forEach(ev=>{
-        const dur=(ev.eh*60+ev.em)-(ev.sh*60+ev.sm);
-        if(ev.type==='booked'){
-          evHTML+=`<div class="wv-ev wv-ev-booked" style="border-left-color:${barber.color}">
-            <span class="wv-ev-time">${fmt(ev.sh,ev.sm)}</span>
-            <span class="wv-ev-label">${ev.name}</span>
-          </div>`;
-        }else if(dur>=30){
-          evHTML+=`<div class="wv-ev wv-ev-free">
-            <span class="wv-ev-time">${fmt(ev.sh,ev.sm)} – ${fmt(ev.eh,ev.em)}</span>
-            <span class="wv-ev-label">${freeLbl}</span>
-          </div>`;
-        }
-      });
-    }
-
-    const card=document.createElement('div');
-    card.className='wv-day'+(isT?' wv-today':'');
-    card.innerHTML=`<div class="wv-day-hdr">
-      <span class="wv-dname">${dayNames[day.getDay()]}</span>
-      <span class="wv-ddate">${dateStr}</span>
-      ${isT?`<span class="wv-today-tag">${todayLbl}</span>`:''}
-    </div><div class="wv-events">${evHTML}</div>`;
-    body.appendChild(card);
+    dcols.appendChild(col);
   }
+
+  // Sync header padding for scrollbar
+  requestAnimationFrame(()=>{
+    const g=$('wvGrid'),hc=$('wvDhdrCols');
+    if(g&&hc){const sb=g.offsetWidth-g.clientWidth;hc.style.paddingRight=sb>0?sb+'px':'';}
+  });
 }
 
 $('focusWeekBtn').onclick=openWeekView;
