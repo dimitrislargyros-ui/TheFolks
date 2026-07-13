@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="theme-color" content="#080b12">
+  <title>Schedule</title>
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Pacifico&family=Playfair+Display:wght@700;800&family=Bebas+Neue&family=Satisfy&family=Oswald:wght@600;700&family=Cinzel:wght@700;800&family=Dancing+Script:wght@700&family=Righteous&family=Nunito:wght@700;800;900&family=Teko:wght@600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --bg:#080b12;
+      --sur:#0e1421;
+      --sur2:#131d30;
+      --sur3:#1a2540;
+      --red:#8b1229; --red-hi:#b8182e; --gold:#c8aa6e;
+      --txt:#ece9e4; --txt2:#7a8aaa; --muted:#404f6e;
+      --border:#182030; --border2:#1e2d45;
+      --sh:48px; --tw:52px;
+    }
+    html,body { height:100%; overflow:hidden; }
+    body {
+      height:100dvh; background:var(--bg); color:var(--txt);
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;
+      display:flex; flex-direction:column;
+      -webkit-tap-highlight-color:transparent; user-select:none;
+    }
+
+    /* ── LOADING ── */
+    #fbLoading {
+      position:fixed; inset:0; background:var(--bg);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      z-index:9999; gap:18px;
+    }
+    .load-ring {
+      width:80px; height:80px; border-radius:50%;
+      background:var(--sur); border:2px solid var(--border2);
+      display:flex; align-items:center; justify-content:center;
+      animation:loadPulse 2.2s ease-in-out infinite;
+    }
+    #loadingEmoji { font-size:34px; line-height:1; }
+    @keyframes loadPulse {
+      0%,100% { box-shadow:0 0 0 0 rgba(200,170,110,0); transform:scale(1); }
+      50%      { box-shadow:0 0 0 12px rgba(200,170,110,.08); transform:scale(1.05); }
+    }
+    .load-dots { display:flex; gap:7px; }
+    .load-dots span {
+      width:5px; height:5px; border-radius:50%;
+      background:var(--gold); opacity:.2;
+      animation:dotUp 1.4s ease-in-out infinite;
+    }
+    .load-dots span:nth-child(2) { animation-delay:.18s; }
+    .load-dots span:nth-child(3) { animation-delay:.36s; }
+    @keyframes dotUp {
+      0%,100% { opacity:.2; transform:translateY(0); }
+      50%      { opacity:1;  transform:translateY(-5px); }
+    }
+    #loadingText {
+      font-size:10px; letter-spacing:4px; font-weight:700; color:var(--gold); opacity:.45;
+      text-transform:uppercase;
+    }
+
+    /* ── HEADER ── */
+    .hdr {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 16px 10px; background:var(--sur);
+      border-bottom:1px solid var(--border2);
+      flex-shrink:0; position:relative;
+    }
+    /* Subtle accent line under header — single color, no gradient clutter */
+    .hdr::after {
+      content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px;
+      background:var(--gold); opacity:.35; pointer-events:none;
+    }
+    .logo { display:flex; align-items:center; gap:11px; }
+    .logo-icon {
+      width:38px; height:38px; border-radius:50%;
+      background:var(--red); border:2px solid var(--gold);
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+      font-family:Pacifico,Georgia,serif; font-size:13px; color:#fff;
+      cursor:pointer; overflow:hidden; position:relative;
+      background-size:cover; background-position:center;
+      box-shadow:0 3px 12px rgba(0,0,0,.45), 0 0 0 1px rgba(200,170,110,.2);
+    }
+    .logo-icon .logo-cam {
+      position:absolute; inset:0; background:rgba(0,0,0,.52); border-radius:50%;
+      display:none; align-items:center; justify-content:center; font-size:14px;
+    }
+    .logo-icon:active .logo-cam { display:flex; }
+    .logo-words { display:flex; flex-direction:column; line-height:1.1; gap:1px; cursor:pointer; }
+    .logo-words:active { opacity:.7; }
+    .logo-name { font-size:18px; font-weight:900; color:var(--gold); letter-spacing:-.5px; font-family:Pacifico,Georgia,serif; }
+    .logo-sub  { font-size:7px; font-weight:700; letter-spacing:2.5px; color:var(--muted); text-transform:uppercase; margin-top:2px; }
+    .hdr-right { display:flex; gap:7px; align-items:center; }
+    .hdr-btn {
+      background:transparent; border:1px solid var(--border2); color:var(--txt2);
+      width:34px; height:34px; border-radius:10px; cursor:pointer; font-size:16px;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .hdr-btn:active { background:var(--sur2); }
+
+    /* ── WEEK NAV ── */
+    .wnav {
+      display:flex; align-items:center; gap:9px; padding:7px 14px;
+      background:var(--sur); border-bottom:1px solid var(--border); flex-shrink:0;
+    }
+    .wnav-btn {
+      width:30px; height:30px; background:transparent; border:1px solid var(--border2);
+      border-radius:8px; color:var(--txt); font-size:16px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+    }
+    .wnav-btn:active { background:var(--sur2); }
+    .wnav-lbl { flex:1; text-align:center; font-size:11px; font-weight:600; color:var(--txt2); letter-spacing:.3px; }
+    .btn-today {
+      background:var(--red); color:#fff; border:none; border-radius:8px;
+      padding:7px 12px; font-size:10.5px; font-weight:800; cursor:pointer;
+      letter-spacing:.5px; font-family:inherit; text-transform:uppercase;
+    }
+    .btn-today:active { filter:brightness(1.15); }
+
+    /* ── DAY TABS ── */
+    .dtabs {
+      display:flex; background:var(--sur);
+      border-bottom:1px solid var(--border); flex-shrink:0;
+      padding:4px 6px 0; gap:2px;
+    }
+    .dtab {
+      flex:1; text-align:center; padding:5px 2px 6px;
+      cursor:pointer; position:relative; border-radius:8px 8px 0 0;
+    }
+    /* Active underline */
+    .dtab::after {
+      content:''; position:absolute; bottom:0; left:50%;
+      transform:translateX(-50%); width:0; height:2px;
+      background:var(--gold); border-radius:1px 1px 0 0;
+      transition:width .2s cubic-bezier(.4,0,.2,1);
+    }
+    .dtab.active::after { width:60%; }
+    .dtab-wd { font-size:8px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+    .dtab-dn {
+      font-size:15px; font-weight:700; color:var(--muted);
+      width:28px; height:28px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; margin:0 auto;
+      transition:background .15s,color .15s;
+    }
+    .dtab-dot { width:4px; height:4px; border-radius:50%; margin:3px auto 0; }
+    .dtab-dot.on { background:var(--red-hi); }
+    .dtab.active .dtab-wd { color:var(--gold); }
+    .dtab.active .dtab-dn { color:var(--txt); font-weight:800; }
+    .dtab.today .dtab-dn { background:var(--red); color:#fff; }
+
+    /* ── BARBER HEADER ── */
+    .bhdr { display:flex; flex-shrink:0; background:var(--sur); border-bottom:1px solid var(--border); }
+    .bhdr-gap { width:var(--tw); flex-shrink:0; border-right:1px solid var(--border); }
+    .bhdr-cols { flex:1; display:flex; overflow:hidden; }
+    .bhdr-col {
+      flex:1; min-width:0; padding:9px 4px;
+      text-align:center; font-size:9.5px; font-weight:700;
+      letter-spacing:.5px; text-transform:uppercase; color:var(--txt2);
+      border-right:1px solid var(--border);
+      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+      position:relative;
+    }
+    /* Color dot glow — subtle, single per-barber indicator */
+    .bhdr-col .ci { width:7px; height:7px; border-radius:50%; flex-shrink:0; box-shadow:0 0 5px var(--ci-color,#fff); }
+    .bhdr-col .bn { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bhdr-col:active { background:var(--sur2); }
+    .bhdr-add {
+      width:44px; min-width:44px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      border-left:1px solid var(--border); color:var(--muted); font-size:20px; cursor:pointer;
+    }
+    .bhdr-add:active { background:var(--sur2); color:var(--gold); }
+
+    /* ── GRID ── */
+    .grid {
+      flex:1; display:flex; align-items:flex-start;
+      overflow-y:scroll; overflow-x:hidden; min-height:0;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-gutter:stable;
+    }
+    /* Custom scrollbar */
+    .grid::-webkit-scrollbar { width:6px; }
+    .grid::-webkit-scrollbar-track { background:var(--bg); }
+    .grid::-webkit-scrollbar-thumb {
+      background:var(--border2); border-radius:3px;
+      transition:background .2s;
+    }
+    .grid::-webkit-scrollbar-thumb:hover { background:var(--muted); }
+    /* Firefox */
+    .grid { scrollbar-width:thin; scrollbar-color:var(--border2) var(--bg); }
+    .tgutter { width:var(--tw); flex-shrink:0; border-right:1px solid var(--border); }
+    .ttick {
+      height:var(--sh); display:flex; align-items:flex-start;
+      justify-content:flex-end; padding:3px 7px 0;
+      font-size:9px; color:var(--muted); font-weight:500; letter-spacing:.2px;
+    }
+    .ttick.half { font-size:9px; color:var(--muted); padding-top:3px; }
+    .bcols-wrap { flex:1; min-width:0; margin-right:44px; }
+    .bcols { display:flex; position:relative; }
+    .bcol { flex:1; min-width:0; border-right:1px solid var(--border); position:relative; }
+    .slot { height:var(--sh); cursor:pointer; position:relative; overflow:visible; }
+    .slot.hr   { border-bottom:1px solid var(--border); }
+    .slot.half { border-bottom:1px solid rgba(24,32,48,.8); }
+    .slot:active { background:rgba(200,170,110,.06); }
+    .slot.drag-over { background:rgba(200,170,110,.14)!important; outline:2px dashed var(--gold); outline-offset:-2px; z-index:1; }
+
+    /* ── CHIP ── */
+    .chip {
+      position:absolute; left:2px; right:2px; top:2px;
+      border-radius:8px; overflow:hidden;
+      z-index:3; box-shadow:0 2px 12px rgba(0,0,0,.55);
+      touch-action:none; cursor:pointer;
+      /* bg + border-left set in JS */
+    }
+    /* Top glass sheen */
+    .chip::after {
+      content:''; position:absolute; inset:0; border-radius:8px;
+      background:linear-gradient(180deg,rgba(255,255,255,.1) 0%,transparent 45%);
+      pointer-events:none;
+    }
+    .chip-name {
+      position:absolute; top:7px; left:13px; right:8px;
+      font-size:11px; font-weight:700; color:#fff;
+      overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+      pointer-events:none; letter-spacing:.1px;
+    }
+    .chip-rec { position:absolute; top:5px; right:7px; font-size:10px; color:rgba(255,255,255,.6); pointer-events:none; }
+    .chip.dragging { opacity:.2; }
+    .chip.press-active { filter:brightness(1.2); transform:scale(.97); transition:transform .1s,filter .1s; }
+    .chip-rz {
+      position:absolute; bottom:0; left:0; right:0; height:16px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:ns-resize; z-index:5;
+    }
+    .chip-rz::after { content:''; width:22px; height:2px; border-radius:2px; background:rgba(255,255,255,.22); }
+
+    /* Ghost */
+    .drag-ghost {
+      position:fixed; z-index:999; border-radius:10px; padding:8px 14px;
+      font-size:13px; font-weight:700; color:#fff; pointer-events:none;
+      box-shadow:0 14px 40px rgba(0,0,0,.75), 0 0 0 2px var(--gold);
+      transform:scale(1.07) rotate(-1.5deg);
+      max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+
+    /* Now line — one per .bcol so each is relative to its own column */
+    .now-line { position:absolute; left:0; right:0; height:2px; background:var(--red-hi); z-index:6; pointer-events:none; }
+    .now-line::before { content:''; position:absolute; top:-3px; left:-1px; width:8px; height:8px; border-radius:50%; background:var(--red-hi); }
+    .now-line.nodot::before { display:none; }
+
+    /* ── BOTTOM SHEETS ── */
+    .overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.78); z-index:200;
+      display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity .2s;
+    }
+    .overlay.open { opacity:1; pointer-events:all; }
+    .sheet {
+      background:var(--sur); border-top:1px solid var(--border2);
+      border-radius:22px 22px 0 0;
+      padding:0 20px max(env(safe-area-inset-bottom,20px),24px);
+      width:100%; max-width:540px; margin:0 auto;
+      transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1);
+      max-height:90dvh; overflow-y:auto;
+    }
+    .overlay.open .sheet { transform:none; }
+    .sbar { width:30px; height:3px; background:var(--border2); border-radius:2px; margin:12px auto 20px; }
+    .ssub { font-size:9.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+    .sttl { font-size:20px; font-weight:800; margin-bottom:18px; letter-spacing:-.4px; color:var(--txt); }
+    .sinput {
+      width:100%; background:var(--sur2); border:1.5px solid var(--border2);
+      border-radius:12px; padding:14px 16px; font-size:16px; color:var(--txt);
+      outline:none; font-family:inherit; margin-bottom:14px; -webkit-appearance:none;
+      transition:border-color .15s, background .15s;
+    }
+    .sinput:focus { border-color:var(--gold); background:var(--sur3); }
+    .sinput::placeholder { color:var(--muted); }
+    .sbtns { display:flex; gap:10px; }
+    .sbtn { border-radius:12px; padding:15px; font-size:15px; font-weight:700; cursor:pointer; border:none; font-family:inherit; }
+    .sbtn:active { filter:brightness(1.1); }
+    .sbtn-save   { flex:1; background:var(--red); color:#fff; }
+    .sbtn-cancel { background:var(--sur2); color:var(--txt2); padding:15px 16px; border:1px solid var(--border2); }
+    .sbtn-del    { background:none; color:#ff5252; border:1.5px solid rgba(255,82,82,.35); padding:15px 14px; border-radius:12px; cursor:pointer; font-size:18px; font-family:inherit; }
+    .sbtn-del:active { background:rgba(255,82,82,.1); }
+
+    /* ── PILL BUTTONS ── */
+    .pill-row { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:14px; }
+    .pill {
+      padding:8px 13px; border-radius:20px; font-size:11.5px; font-weight:700;
+      background:var(--sur2); border:1.5px solid var(--border2); color:var(--txt2);
+      cursor:pointer; font-family:inherit; transition:all .14s;
+    }
+    .pill.sel { background:var(--red); border-color:var(--red); color:#fff; }
+    .sselect {
+      width:100%; background:var(--sur2); border:1.5px solid var(--border2);
+      border-radius:12px; padding:14px 16px; font-size:15px; color:var(--txt);
+      font-family:inherit; outline:none; margin-bottom:14px; -webkit-appearance:none; appearance:none;
+      transition:border-color .15s;
+    }
+    .sselect:focus { border-color:var(--gold); }
+
+    /* ── COLOR SWATCHES ── */
+    .swatch-row { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+    .swatch { width:32px; height:32px; border-radius:50%; cursor:pointer; border:2.5px solid transparent; transition:transform .12s,border-color .12s; }
+    .swatch.sel { border-color:#fff; transform:scale(1.2); }
+
+    /* ── BARBER DELETE ── */
+    .divider { height:1px; background:var(--border); margin:16px 0; }
+    .del-btn { width:100%; background:none; border:1.5px solid rgba(255,82,82,.35); color:#ff5252; border-radius:12px; padding:14px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .del-btn:active { background:rgba(255,82,82,.1); }
+    .del-btn.hidden { display:none; }
+    .confirm { background:var(--sur2); border:1px solid rgba(255,82,82,.25); border-radius:14px; padding:14px; margin-top:10px; display:none; }
+    .confirm.show { display:block; }
+    .confirm-txt { font-size:13px; color:var(--txt2); margin-bottom:12px; line-height:1.5; }
+    .confirm-row { display:flex; gap:8px; }
+    .confirm-no  { background:var(--sur); color:var(--txt2); border:1px solid var(--border2); border-radius:10px; padding:11px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+    .confirm-yes { flex:1; background:#d03333; color:#fff; border:none; border-radius:10px; padding:11px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+
+    /* ── MOVE CONFIRM POPUP ── */
+    .move-bg {
+      position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:600;
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none; transition:opacity .18s;
+    }
+    .move-bg.open { opacity:1; pointer-events:all; }
+    .move-popup {
+      background:var(--sur); border:1px solid var(--border2); border-radius:22px;
+      padding:26px 22px 20px; width:min(86vw,330px); text-align:center;
+      transform:scale(.94); transition:transform .18s;
+      box-shadow:0 24px 60px rgba(0,0,0,.7);
+    }
+    .move-bg.open .move-popup { transform:scale(1); }
+    .move-popup-icon { font-size:30px; margin-bottom:10px; }
+    .move-popup-title { font-size:16px; font-weight:800; color:var(--txt); margin-bottom:6px; }
+    .move-popup-body { font-size:13px; color:var(--txt2); margin-bottom:22px; line-height:1.7; }
+    .move-popup-body b { color:var(--txt); }
+    .move-popup-body .move-arrow { color:var(--gold); font-size:16px; display:block; margin:2px 0; }
+    .move-btns { display:flex; gap:10px; }
+    .move-cancel { flex:1; background:var(--sur2); border:1.5px solid var(--border2); color:var(--txt2); border-radius:13px; padding:13px 10px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; transition:background .12s; }
+    .move-cancel:active { background:var(--sur3); }
+    .move-ok { flex:1.4; background:var(--gold); border:none; color:#0a0c10; border-radius:13px; padding:13px 10px; font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; transition:filter .12s; }
+    .move-ok:active { filter:brightness(1.15); }
+
+    /* ── SETUP SCREEN ── */
+    #setupOvl {
+      position:fixed; inset:0; background:var(--bg); z-index:9998;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:32px 24px; overflow-y:auto;
+    }
+    #setupOvl.hidden { display:none; }
+    .setup-icon { font-size:48px; margin-bottom:16px; line-height:1; }
+    .setup-title { font-size:22px; font-weight:900; color:var(--gold); margin-bottom:6px; letter-spacing:-.5px; text-align:center; }
+    .setup-sub { font-size:13px; color:var(--txt2); margin-bottom:28px; text-align:center; line-height:1.65; max-width:280px; }
+    .setup-lbl { font-size:9.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; align-self:flex-start; }
+    .setup-inp { width:100%; background:var(--sur2); border:1.5px solid var(--border2); border-radius:13px; padding:15px 16px; font-size:17px; color:var(--txt); outline:none; font-family:inherit; margin-bottom:14px; -webkit-appearance:none; transition:border-color .15s; }
+    .setup-inp:focus { border-color:var(--gold); }
+    .setup-inp::placeholder { color:var(--muted); }
+    .setup-btn {
+      width:100%; background:var(--red); color:#fff; border:none; border-radius:13px;
+      padding:16px; font-size:16px; font-weight:800; cursor:pointer; font-family:inherit;
+      margin-top:8px; letter-spacing:.3px;
+    }
+    .setup-btn:active { filter:brightness(1.12); }
+
+    /* Industry grid */
+    .industry-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-bottom:20px; max-width:340px; }
+    .industry-card {
+      background:var(--sur); border:1.5px solid var(--border2); border-radius:14px;
+      padding:18px 10px 14px; display:flex; flex-direction:column; align-items:center; gap:8px;
+      cursor:pointer; transition:border-color .2s, background .2s, transform .15s, box-shadow .2s;
+    }
+    .industry-card:active { transform:scale(.96); }
+    .industry-card.sel {
+      border-color:var(--gold); background:rgba(200,170,110,.08);
+      box-shadow:0 0 20px rgba(200,170,110,.12);
+    }
+    .industry-card-emoji { font-size:32px; line-height:1; }
+    .industry-card-label { font-size:10.5px; font-weight:700; color:var(--txt2); text-align:center; letter-spacing:.2px; }
+
+    .setup-back { background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer; margin-top:14px; font-family:inherit; }
+
+    .hidden { display:none !important; }
+    .logo-words { cursor:pointer; }
+    .logo-words:active { opacity:.7; }
+
+    /* ── FONT PICKER ── */
+    .font-pick-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .font-pick-btn {
+      flex:1; min-width:120px; padding:11px 10px; border-radius:12px;
+      background:var(--sur2); border:1.5px solid var(--border2);
+      color:var(--txt); cursor:pointer; text-align:center;
+      font-size:16px; transition:border-color .15s, background .15s;
+    }
+    .font-pick-btn:active { background:var(--sur3); }
+    .font-pick-btn.sel { border-color:var(--gold); background:rgba(200,170,110,.1); }
+
+    /* ── FOCUS MODE ── */
+    .focus-bar {
+      display:none; align-items:center; justify-content:space-between;
+      padding:6px 14px; background:var(--sur2); border-bottom:1px solid var(--border);
+      font-size:11px; font-weight:700; color:var(--gold); letter-spacing:.4px; flex-shrink:0;
+    }
+    .focus-bar.active { display:flex; }
+    .focus-bar-name { flex:1; }
+    .focus-bar-exit { background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; font-family:inherit; }
+    .focus-bar-exit:active { color:var(--txt); }
+    .focus-bar-week { background:rgba(200,170,110,.12); border:1.5px solid rgba(200,170,110,.3); color:var(--gold); border-radius:8px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; margin-right:6px; }
+    .focus-bar-week:active { background:rgba(200,170,110,.22); }
+
+    /* ── WEEK VIEW ── */
+    .wv-bg { position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:500; display:flex; flex-direction:column; opacity:0; pointer-events:none; transition:opacity .2s; }
+    .wv-bg.open { opacity:1; pointer-events:all; }
+    .wv-panel { flex:1; background:var(--bg); display:flex; flex-direction:column; overflow:hidden; transform:translateY(32px); transition:transform .22s; }
+    .wv-bg.open .wv-panel { transform:translateY(0); }
+    .wv-top { display:flex; align-items:center; gap:8px; padding:13px 14px 10px; border-bottom:1px solid var(--border2); flex-shrink:0; background:var(--sur); }
+    .wv-barber-pill { font-size:11px; font-weight:800; color:var(--gold); letter-spacing:.3px; flex:1; }
+    .wv-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; line-height:1; padding:2px 4px; }
+    .wv-nav-row { display:flex; align-items:center; gap:8px; padding:8px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .wv-nav-btn { background:var(--sur2); border:1.5px solid var(--border2); color:var(--txt); border-radius:10px; width:36px; height:36px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .wv-nav-btn:active { background:var(--sur3); }
+    .wv-week-label { flex:1; text-align:center; font-size:13px; font-weight:800; color:var(--txt); }
+    .wv-body { flex:1; overflow-y:auto; padding:10px 12px 24px; display:flex; flex-direction:column; gap:8px; -webkit-overflow-scrolling:touch; }
+    .wv-day { background:var(--sur); border:1px solid var(--border2); border-radius:14px; overflow:hidden; }
+    .wv-day.wv-today { border-color:var(--gold); }
+    .wv-day-hdr { display:flex; align-items:center; gap:8px; padding:9px 13px 7px; border-bottom:1px solid var(--border); }
+    .wv-day.wv-today .wv-day-hdr { background:rgba(200,170,110,.07); }
+    .wv-dname { font-size:13px; font-weight:800; color:var(--txt); min-width:36px; }
+    .wv-ddate { font-size:12px; color:var(--txt2); flex:1; }
+    .wv-today-tag { font-size:9px; font-weight:800; color:var(--gold); background:rgba(200,170,110,.18); border-radius:5px; padding:2px 6px; letter-spacing:.3px; }
+    .wv-events { padding:7px 10px 9px; display:flex; flex-direction:column; gap:4px; }
+    .wv-ev { display:flex; align-items:center; gap:8px; padding:6px 9px; border-radius:8px; border-left:3px solid transparent; }
+    .wv-ev-booked { background:rgba(255,255,255,.03); }
+    .wv-ev-free { background:rgba(39,174,96,.07); border-left-color:#27ae60 !important; }
+    .wv-ev-time { font-size:11px; font-weight:700; color:var(--txt); min-width:88px; flex-shrink:0; }
+    .wv-ev-label { font-size:12px; color:var(--txt2); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .wv-ev-free .wv-ev-label { color:#3dbd72; font-weight:700; }
+    .wv-free-day { padding:12px 13px; font-size:12px; color:#3dbd72; font-weight:700; }
+    .wv-no-events { padding:12px 13px; font-size:12px; color:var(--muted); }
+
+    /* ── THEME PICKER ── */
+    .theme-grid { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:4px; }
+    .theme-swatch-btn {
+      width:44px; height:44px; border-radius:50%; border:3px solid transparent;
+      cursor:pointer; flex-shrink:0; position:relative;
+      transition:transform .14s, border-color .14s, box-shadow .14s;
+    }
+    .theme-swatch-btn:active { transform:scale(.92); }
+    .theme-swatch-btn.active {
+      border-color:#fff;
+      box-shadow:0 0 0 2px rgba(255,255,255,.25), 0 4px 14px rgba(0,0,0,.5);
+      transform:scale(1.1);
+    }
+    /* small accent dot in corner */
+    .theme-swatch-btn::after {
+      content:''; position:absolute; bottom:1px; right:1px;
+      width:11px; height:11px; border-radius:50%;
+      border:2px solid var(--sur); background:var(--accent-dot,#fff);
+    }
+
+    /* ── RECURRING LIST ── */
+    .rec-list { margin-top:8px; }
+    .rec-item { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; margin-bottom:8px; background:var(--sur2); border:1px solid var(--border2); }
+    .rec-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .rec-info { flex:1; min-width:0; }
+    .rec-name { font-size:13px; font-weight:700; }
+    .rec-meta { font-size:11px; color:var(--txt2); margin-top:2px; }
+    .rec-rm { background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; padding:4px 8px; }
+    .rec-rm:active { color:#ff5252; }
+    .rec-empty { text-align:center; color:var(--muted); font-size:13px; padding:20px 0; }
+  </style>
+</head>
+<body>
+
+<!-- Firebase loading overlay -->
+<div id="fbLoading">
+  <div class="load-ring">
+    <div id="loadingEmoji">📅</div>
+  </div>
+  <div class="load-dots"><span></span><span></span><span></span></div>
+  <div id="loadingText">LOADING...</div>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="setupOvl" class="hidden">
+  <div id="setupStep1">
+    <div class="setup-icon">📅</div>
+    <div class="setup-title" data-i18n="setup.welcome">Welcome!</div>
+    <div class="setup-sub" data-i18n="setup.chooseIndustry">Choose your industry to get started.</div>
+    <div class="industry-grid" id="industryGrid"></div>
+  </div>
+  <div id="setupStep2" class="hidden">
+    <div id="setupEmoji" class="setup-icon">📅</div>
+    <div class="setup-title" id="setupIndustryLabel">New Business</div>
+    <div class="setup-sub" data-i18n="setup.enterName">Enter your business name.</div>
+    <div class="setup-lbl"><span data-i18n="setup.businessName">Business name</span></div>
+    <input class="setup-inp" id="setupName" placeholder="e.g. John's Barbershop" autocomplete="off" autocapitalize="words">
+    <div class="setup-lbl"><span data-i18n="setup.subtitle">Subtitle</span> <span style="color:#2a3550" data-i18n="setup.optional">(optional)</span></div>
+    <input class="setup-inp" id="setupSub" placeholder="e.g. Barber Shop" autocomplete="off" autocapitalize="words">
+    <button class="setup-btn" id="setupSave" data-i18n="setup.start">Get Started →</button>
+    <button class="setup-back" id="setupBack" data-i18n="setup.back">← Back</button>
+  </div>
+</div>
+
+<!-- SHOP NAME EDIT SHEET -->
+<div class="overlay" id="shopNameOvl">
+  <div class="sheet">
+    <div class="sbar"></div>
+    <div class="ssub" data-i18n="shopname.title">BUSINESS NAME</div>
+    <div class="sttl" data-i18n="shopname.heading">Edit Name</div>
+    <input class="sinput" id="shopNameInp" placeholder="Name…" autocomplete="off" autocapitalize="words">
+    <input class="sinput" id="shopSubInp" placeholder="Subtitle (e.g. Barber Shop)…" autocomplete="off" autocapitalize="words">
+    <div class="ssub" style="margin-bottom:10px">Font</div>
+    <div class="font-pick-row" id="fontPickRow"></div>
+    <div class="sbtns">
+      <button class="sbtn sbtn-cancel" id="shopNameCancel" data-i18n="btn.cancel">Cancel</button>
+      <button class="sbtn sbtn-save" id="shopNameSave" data-i18n="btn.save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-icon" id="logoIcon">
+      <span id="logoLetter">F</span>
+      <div class="logo-cam">📷</div>
+    </div>
+    <input type="file" id="logoImgInput" accept="image/*" style="display:none">
+    <div class="logo-words" id="logoWords">
+      <span class="logo-name" id="hdrShopName">Schedule</span>
+      <span class="logo-sub"  id="hdrShopSub">Barber Shop</span>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <button class="hdr-btn" id="btnRec"    title="Recurring clients" style="font-size:18px">↺</button>
+    <button class="hdr-btn" id="btnFuture" title="Future appointment" style="font-size:15px">📅</button>
+    <button class="hdr-btn" id="btnFocus"  title="My View" style="font-size:16px">◎</button>
+    <button class="hdr-btn" id="btnTheme"  title="Colors & Theme" style="font-size:15px">🎨</button>
+    <button class="hdr-btn" id="btnAdd"    title="New member">＋</button>
+  </div>
+</div>
+
+<!-- WEEK NAV -->
+<div class="wnav">
+  <button class="wnav-btn" id="btnPrev">‹</button>
+  <div class="wnav-lbl" id="wLabel"></div>
+  <button class="btn-today" id="btnToday" data-i18n="nav.today">Today</button>
+  <button class="wnav-btn" id="btnNext">›</button>
+</div>
+
+<!-- DAY TABS -->
+<div class="dtabs" id="dtabs"></div>
+
+<!-- BARBER HEADER -->
+<div class="bhdr" id="bhdr">
+  <div class="bhdr-gap"></div>
+  <div class="bhdr-cols" id="bhdrCols"></div>
+  <div class="bhdr-add" id="btnAddB">+</div>
+</div>
+
+<!-- FOCUS BAR (shows when in "My View" mode) -->
+<div class="focus-bar" id="focusBar">
+  <span class="focus-bar-name" id="focusBarName"></span>
+  <button class="focus-bar-week" id="focusWeekBtn">📋 Εβδομάδα</button>
+  <button class="focus-bar-exit" id="focusExit">✕ All staff</button>
+</div>
+
+<!-- WEEK VIEW OVERLAY -->
+<div class="wv-bg" id="wvBg">
+  <div class="wv-panel">
+    <div class="wv-top">
+      <span class="wv-barber-pill" id="wvBarberName"></span>
+      <button class="wv-close" id="wvClose">✕</button>
+    </div>
+    <div class="wv-nav-row">
+      <button class="wv-nav-btn" id="wvPrev">‹</button>
+      <div class="wv-week-label" id="wvWeekLabel"></div>
+      <button class="wv-nav-btn" id="wvNext">›</button>
+    </div>
+    <div class="wv-body" id="wvBody"></div>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="grid" id="grid">
+  <div class="tgutter" id="tgutter"></div>
+  <div class="bcols-wrap" id="bcolsWrap">
+    <div class="bcols" id="bcols"></div>
+  </div>
+</div>
+
+<!-- APPOINTMENT SHEET -->
+<div class="overlay" id="apptOvl">
+  <div class="sheet">
+    <div class="sbar"></div>
+    <div class="ssub" id="apptSub"></div>
+    <div class="sttl" id="apptTtl"></div>
+    <input class="sinput" id="apptInp" placeholder="Client name…"
+      autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+    <div class="sbtns" id="apptBtns"></div>
+  </div>
+</div>
+
+<!-- BARBER SHEET -->
+<div class="overlay" id="barberOvl">
+  <div class="sheet">
+    <div class="sbar"></div>
+    <div class="ssub" id="barberSub"></div>
+    <div class="sttl" id="barberTtl"></div>
+    <input class="sinput" id="barberInp" placeholder="Name…"
+      autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+    <div class="ssub" style="margin-bottom:10px" data-i18n="barber.color">Color</div>
+    <div class="swatch-row" id="swatchRow"></div>
+    <div class="sbtns" style="margin-bottom:0">
+      <button class="sbtn sbtn-cancel" id="barberCancel" data-i18n="btn.cancel">Cancel</button>
+      <button class="sbtn sbtn-save"   id="barberSave"   data-i18n="btn.save">Save</button>
+    </div>
+    <div class="divider" id="barberDiv"></div>
+    <button class="del-btn hidden" id="barberDel" data-i18n="barber.delete">🗑 Delete</button>
+    <div class="confirm" id="confirmBox">
+      <div class="confirm-txt" data-i18n="barber.confirmTxt">All appointments for this member will also be deleted. Continue?</div>
+      <div class="confirm-row">
+        <button class="confirm-no"  id="confirmNo"  data-i18n="btn.cancel">Cancel</button>
+        <button class="confirm-yes" id="confirmYes" data-i18n="barber.confirmYes">Yes, delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FUTURE APPOINTMENT SHEET -->
+<div class="overlay" id="futOvl">
+  <div class="sheet">
+    <div class="sbar"></div>
+    <div class="ssub" data-i18n="fut.sub">NEW APPOINTMENT</div>
+    <div class="sttl" data-i18n="fut.title">Future Appointment</div>
+    <div class="ssub" style="margin-bottom:8px" data-i18n="fut.date">Date</div>
+    <input class="sinput" type="date" id="futDate" style="cursor:pointer;color-scheme:dark">
+    <div class="ssub" style="margin-bottom:8px" id="futStaffLbl">Staff</div>
+    <div class="pill-row" id="futBarberPills"></div>
+    <div class="ssub" style="margin-bottom:8px" data-i18n="fut.time">Time</div>
+    <select class="sselect" id="futTimeSel"></select>
+    <div class="ssub" style="margin-bottom:8px" data-i18n="fut.clientName">Client name</div>
+    <input class="sinput" id="futNameInp" placeholder="Name…"
+      autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+    <div id="futConflict" style="display:none;background:rgba(139,18,41,.15);border:1px solid rgba(139,18,41,.5);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+      <div id="futConflictMsg" style="font-size:12px;color:#ff7070;margin-bottom:8px;line-height:1.5"></div>
+      <div id="futConflictFree" style="font-size:11px;color:var(--muted);margin-bottom:6px"></div>
+      <div id="futConflictSlots" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+    <div class="sbtns">
+      <button class="sbtn sbtn-cancel" id="futCancel" data-i18n="btn.cancel">Cancel</button>
+      <button class="sbtn sbtn-save"   id="futSave"   data-i18n="btn.save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- THEME / SETTINGS SHEET -->
+<div class="overlay" id="themeOvl">
+  <div class="sheet">
+    <div class="sbar"></div>
+    <div class="ssub" data-i18n="theme.sub">SETTINGS</div>
+    <div class="sttl" data-i18n="theme.title">Colors & Theme</div>
+    <div class="ssub" style="margin-bottom:10px" data-i18n="theme.choose">Choose industry theme</div>
+    <div class="theme-grid" id="themeGrid"></div>
+    <div style="height:16px"></div>
+    <div class="ssub" style="margin-bottom:10px" data-i18n="theme.lang">Language</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="pill sel" id="langEN">🇬🇧 EN</button>
+      <button class="pill"     id="langEL">🇬🇷 ΕΛ</button>
+    </div>
+    <div class="sbtns">
+      <button class="sbtn sbtn-cancel" id="themeClose" data-i18n="btn.close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECURRING SHEET -->
+<div class="overlay" id="recOvl">
+  <div class="sheet">
+    <div class="sbar"></div>
+    <div class="ssub" data-i18n="rec.sub">RECURRING CLIENTS</div>
+    <div class="sttl" data-i18n="rec.title">Recurring</div>
+    <div class="ssub" style="margin-bottom:8px" id="recStaffLbl">Staff</div>
+    <div class="pill-row" id="recBarberPills"></div>
+    <div class="ssub" style="margin-bottom:8px" data-i18n="rec.day">Day</div>
+    <div class="pill-row" id="recDayPills"></div>
+    <div class="ssub" style="margin-bottom:8px" data-i18n="rec.time">Time</div>
+    <select class="sselect" id="recTimeSel"></select>
+    <div class="ssub" style="margin-bottom:8px" data-i18n="rec.clientName">Client name</div>
+    <input class="sinput" id="recNameInp" placeholder="Name…"
+      autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+    <div class="ssub" style="margin-bottom:8px" data-i18n="rec.frequency">Frequency</div>
+    <div class="pill-row" id="recFreqPills">
+      <button class="pill sel" data-freq="1" data-i18n="rec.freq1">Every week</button>
+      <button class="pill"     data-freq="2" data-i18n="rec.freq2">Every 2 wks.</button>
+      <button class="pill"     data-freq="3" data-i18n="rec.freq3">Every 3 wks.</button>
+    </div>
+    <div class="sbtns" style="margin-bottom:20px">
+      <button class="sbtn sbtn-cancel" id="recCancel" data-i18n="btn.cancel">Cancel</button>
+      <button class="sbtn sbtn-save"   id="recSave"   data-i18n="rec.add">Add ↺</button>
+    </div>
+    <div class="ssub" style="margin-bottom:8px" data-i18n="rec.existing">Existing</div>
+    <div class="rec-list" id="recList"></div>
+  </div>
+</div>
+
+<!-- MOVE CONFIRMATION POPUP -->
+<div class="move-bg" id="moveBg">
+  <div class="move-popup">
+    <div class="move-popup-title" data-i18n="move.title">Move appointment?</div>
+    <div class="move-popup-body" id="moveBody"></div>
+    <div class="move-btns">
+      <button class="move-cancel" id="moveCancel" data-i18n="btn.cancel">Cancel</button>
+      <button class="move-ok"     id="moveOk"     data-i18n="move.yes">Move ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOCUS / MY VIEW SHEET -->
+<div class="overlay" id="focusOvl">
+  <div class="sheet">
+    <div class="sbar"></div>
+    <div class="ssub">MY VIEW</div>
+    <div class="sttl">Who are you?</div>
+    <div class="pill-row" id="focusPills"></div>
+    <div class="sbtns">
+      <button class="sbtn sbtn-cancel" id="focusCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  FIREBASE CONFIG  ← βάλε εδώ τα στοιχεία σου
+// ══════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyA6Fx9XflTK_6HxlcmE5UsA0l5JAP7FJS4",
+  authDomain:        "the-folks-6905f.firebaseapp.com",
+  databaseURL:       "https://the-folks-6905f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "the-folks-6905f",
+  storageBucket:     "the-folks-6905f.firebasestorage.app",
+  messagingSenderId: "398364143235",
+  appId:             "1:398364143235:web:7656db5b130e242f5875b6"
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+const DB = firebase.database();
+
+// ══════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════
+const PALETTE=[
+  '#c0392b','#d35400','#e6a817','#27ae60','#16a085',
+  '#2980b9','#1a3a8e','#8e44ad','#c0397e','#7a2828',
+  '#1a7a4e','#177a72','#1a559e','#2c3e50','#6c3483',
+  '#8a3a18','#b7950b','#145a32','#154360','#4a235a',
+  '#884ea0','#117a65','#9b1c2e','#1f618d','#b9770e',
+];
+const DAY_START=9, DAY_END=22;
+const SPX=48;
+
+// ── i18n ──
+const STRINGS = {
+  en: {
+    'setup.welcome':'Welcome!','setup.chooseIndustry':'Choose your industry to get started.',
+    'setup.enterName':'Enter your business name.','setup.businessName':'Business name',
+    'setup.subtitle':'Subtitle','setup.optional':'(optional)',
+    'setup.start':'Get Started →','setup.back':'← Back',
+    'shopname.title':'BUSINESS NAME','shopname.heading':'Edit Name',
+    'nav.today':'Today',
+    'btn.cancel':'Cancel','btn.save':'Save','btn.close':'Close',
+    'barber.color':'Color','barber.delete':'🗑 Delete',
+    'barber.confirmTxt':'All appointments for this member will also be deleted. Continue?',
+    'barber.confirmYes':'Yes, delete','barber.addSub':'ADD','barber.editSub':'EDIT',
+    'appt.edit':'Edit','appt.new':'New Appointment',
+    'fut.sub':'NEW APPOINTMENT','fut.title':'Future Appointment',
+    'fut.date':'Date','fut.time':'Time','fut.clientName':'Client name',
+    'fut.saved':'✓ Saved!','fut.conflictSlots':'Free slots that day:',
+    'fut.noSlots':'No free slots on this day.','fut.recurringClient':'recurring client',
+    'theme.sub':'SETTINGS','theme.title':'Colors & Theme',
+    'theme.choose':'Choose color theme','theme.lang':'Language',
+    'rec.sub':'RECURRING CLIENTS','rec.title':'Recurring',
+    'rec.day':'Day','rec.time':'Time','rec.clientName':'Client name',
+    'rec.frequency':'Frequency','rec.freq1':'Every week','rec.freq2':'Every 2 wks.',
+    'rec.freq3':'Every 3 wks.','rec.add':'Add ↺','rec.existing':'Existing',
+    'rec.empty':'None yet','rec.everyWeek':'Every wk.','rec.everyN':'Every {n} wks.',
+    'err.connection':'CONNECTION ERROR',
+    'err.permDenied':'Firebase Rules are blocking access.<br>Go to Firebase Console → Realtime Database → Rules and set them to <b style="color:var(--gold)">true</b>.',
+    'err.timeout':'Could not connect. Check databaseURL and Rules.',
+    'move.title':'Move appointment?','move.yes':'Move ✓',
+    'move.swap':'Will swap with:','move.swapYes':'Swap ✓',
+  },
+  el: {
+    'setup.welcome':'Καλώς ήρθες!','setup.chooseIndustry':'Επίλεξε τον κλάδο σου για να ξεκινήσουμε.',
+    'setup.enterName':'Βάλε το όνομα του καταστήματός σου.','setup.businessName':'Όνομα καταστήματος',
+    'setup.subtitle':'Υπότιτλος','setup.optional':'(προαιρετικό)',
+    'setup.start':'Ξεκίνα →','setup.back':'← Πίσω',
+    'shopname.title':'ΟΝΟΜΑ ΚΑΤΑΣΤΗΜΑΤΟΣ','shopname.heading':'Αλλαγή ονόματος',
+    'nav.today':'Σήμερα',
+    'btn.cancel':'Ακύρωση','btn.save':'Αποθήκευση','btn.close':'Κλείσιμο',
+    'barber.color':'Χρώμα','barber.delete':'🗑 Διαγραφή',
+    'barber.confirmTxt':'Θα διαγραφούν και όλα τα ραντεβού αυτού του μέλους. Συνέχεια;',
+    'barber.confirmYes':'Ναι, διαγραφή','barber.addSub':'ΠΡΟΣΘΗΚΗ','barber.editSub':'ΕΠΕΞΕΡΓΑΣΙΑ',
+    'appt.edit':'Επεξεργασία','appt.new':'Νέο Ραντεβού',
+    'fut.sub':'ΝΕΟ ΡΑΝΤΕΒΟΥ','fut.title':'Μελλοντικό Ραντεβού',
+    'fut.date':'Ημερομηνία','fut.time':'Ώρα','fut.clientName':'Όνομα πελάτη',
+    'fut.saved':'✓ Αποθηκεύτηκε!','fut.conflictSlots':'Ελεύθερες ώρες εκείνη τη μέρα:',
+    'fut.noSlots':'Δεν υπάρχουν ελεύθερες ώρες αυτή τη μέρα.','fut.recurringClient':'σταθερός πελάτης',
+    'theme.sub':'ΡΥΘΜΙΣΕΙΣ','theme.title':'Χρώματα & Θέμα',
+    'theme.choose':'Επίλεξε χρώμα θέματος','theme.lang':'Γλώσσα',
+    'rec.sub':'ΣΤΑΘΕΡΟΙ ΠΕΛΑΤΕΣ','rec.title':'Επανάληψη',
+    'rec.day':'Ημέρα','rec.time':'Ώρα','rec.clientName':'Όνομα πελάτη',
+    'rec.frequency':'Συχνότητα','rec.freq1':'Κάθε εβδομάδα','rec.freq2':'Κάθε 2 εβδ.',
+    'rec.freq3':'Κάθε 3 εβδ.','rec.add':'Προσθήκη ↺','rec.existing':'Υπάρχοντες',
+    'rec.empty':'Δεν υπάρχουν ακόμα','rec.everyWeek':'Κάθε εβδ.','rec.everyN':'Κάθε {n} εβδ.',
+    'err.connection':'ΣΦΑΛΜΑ ΣΥΝΔΕΣΗΣ',
+    'err.permDenied':'Τα Firebase Rules δεν επιτρέπουν πρόσβαση.<br>Πήγαινε Firebase Console → Realtime Database → Rules και άλλαξε τα σε <b style="color:var(--gold)">true</b>.',
+    'err.timeout':'Δεν ήταν δυνατή η σύνδεση. Έλεγξε το databaseURL και τα Rules.',
+    'move.title':'Αλλαγή ώρας;','move.yes':'Μετακίνηση ✓',
+    'move.swap':'Θα αντιμεταθεί με:','move.swapYes':'Αντιμετάθεση ✓',
+  }
+};
+const LOCALE = {
+  en:{ WD:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], WD_FULL:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], MN:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] },
+  el:{ WD:['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'], WD_FULL:['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'], MN:['Ιαν','Φεβ','Μαρ','Απρ','Μαϊ','Ιουν','Ιουλ','Αυγ','Σεπ','Οκτ','Νοε','Δεκ'] }
+};
+let currentLang='en';
+let WD=[...LOCALE.en.WD], WD_FULL=[...LOCALE.en.WD_FULL], MN=[...LOCALE.en.MN];
+function t(key){ return (STRINGS[currentLang]||STRINGS.en)[key]||STRINGS.en[key]||key; }
+function applyLangToDOM(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n'), s=t(k);
+    if(s)el.textContent=s;
+  });
+  $('langEN')?.classList.toggle('sel',currentLang==='en');
+  $('langEL')?.classList.toggle('sel',currentLang==='el');
+  document.documentElement.lang=currentLang;
+}
+function setLang(lang){
+  currentLang=lang;
+  WD=[...LOCALE[lang]?.WD||LOCALE.en.WD];
+  WD_FULL=[...LOCALE[lang]?.WD_FULL||LOCALE.en.WD_FULL];
+  MN=[...LOCALE[lang]?.MN||LOCALE.en.MN];
+  applyLangToDOM();
+  refresh();
+  DB.ref('settings/lang').set(lang);
+}
+
+const INDUSTRIES = [
+  // Industry presets (used in setup wizard — staff label matters)
+  { id:'barber',   label:'Barber Shop',   emoji:'✂️',  primary:'#8b1229', accent:'#c8aa6e', staff:'Barber'     },
+  { id:'vet',      label:'Vet Clinic',    emoji:'🐾',  primary:'#0a5c3a', accent:'#3ecf8e', staff:'Vet'        },
+  { id:'hair',     label:'Hair Salon',    emoji:'💇',  primary:'#6b1fa8', accent:'#c97ef5', staff:'Stylist'    },
+  { id:'nails',    label:'Nail Studio',   emoji:'💅',  primary:'#a01860', accent:'#f07ab8', staff:'Technician' },
+  { id:'physio',   label:'Physio',        emoji:'💆',  primary:'#0f3d8a', accent:'#5b9df5', staff:'Therapist'  },
+  { id:'tattoo',   label:'Tattoo Studio', emoji:'🎨',  primary:'#2a1590', accent:'#8a7ef5', staff:'Artist'     },
+  { id:'spa',      label:'Spa / Massage', emoji:'🧖',  primary:'#1a5c50', accent:'#4ef5d0', staff:'Therapist'  },
+  { id:'other',    label:'Other',         emoji:'📅',  primary:'#1e3a6e', accent:'#6090e8', staff:'Staff'      },
+  // Extra color palettes (theme picker only — staff label unused after setup)
+  { id:'c_ruby',   label:'Ruby',          emoji:'📅',  primary:'#c0392b', accent:'#f1948a', staff:'Staff'      },
+  { id:'c_ember',  label:'Ember',         emoji:'📅',  primary:'#d35400', accent:'#f0a500', staff:'Staff'      },
+  { id:'c_gold',   label:'Gold',          emoji:'📅',  primary:'#b7950b', accent:'#f7dc6f', staff:'Staff'      },
+  { id:'c_forest', label:'Forest',        emoji:'📅',  primary:'#145a32', accent:'#52be80', staff:'Staff'      },
+  { id:'c_ocean',  label:'Ocean',         emoji:'📅',  primary:'#154360', accent:'#5dade2', staff:'Staff'      },
+  { id:'c_indigo', label:'Indigo',        emoji:'📅',  primary:'#1f3a8f', accent:'#7b9ef5', staff:'Staff'      },
+  { id:'c_violet', label:'Violet',        emoji:'📅',  primary:'#6c3483', accent:'#c39bd3', staff:'Staff'      },
+  { id:'c_rose',   label:'Rose',          emoji:'📅',  primary:'#922b5b', accent:'#f5a7d1', staff:'Staff'      },
+  { id:'c_teal',   label:'Teal',          emoji:'📅',  primary:'#0e6655', accent:'#48c9b0', staff:'Staff'      },
+  { id:'c_navy',   label:'Navy',          emoji:'📅',  primary:'#1a2548', accent:'#5d8ff5', staff:'Staff'      },
+  { id:'c_slate',  label:'Slate',         emoji:'📅',  primary:'#2c3e50', accent:'#85929e', staff:'Staff'      },
+  { id:'c_rust',   label:'Rust',          emoji:'📅',  primary:'#7e3a1a', accent:'#e59866', staff:'Staff'      },
+  { id:'c_plum',   label:'Plum',          emoji:'📅',  primary:'#4a235a', accent:'#a569bd', staff:'Staff'      },
+  { id:'c_mint',   label:'Mint',          emoji:'📅',  primary:'#0e7f60', accent:'#82e0aa', staff:'Staff'      },
+  { id:'c_azure',  label:'Azure',         emoji:'📅',  primary:'#1a6fa0', accent:'#85c1e9', staff:'Staff'      },
+  { id:'c_coffee', label:'Coffee',        emoji:'📅',  primary:'#4e342e', accent:'#a1887f', staff:'Staff'      },
+];
+
+function applyTheme(primary, accent){
+  const r = document.documentElement;
+  r.style.setProperty('--red',    primary);
+  r.style.setProperty('--gold',   accent);
+  r.style.setProperty('--red-hi', accent);
+}
+
+// ══════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════
+const uid    = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const fmtD   = d =>d.toISOString().slice(0,10);
+const aKey   = (d,bid,h,m)=>`${fmtD(d)}|${bid}|${h}|${m}`;
+const isToday= d =>d.toDateString()===new Date().toDateString();
+const getName= v =>typeof v==='string'?v:(v?.name??'');
+const getSpan= v =>typeof v==='string'?1:(v?.span??1);
+const makeVal= (n,s)=>s<=1?n:{name:n,span:s};
+const $      = id=>document.getElementById(id);
+
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+let barbers=[], data={}, recurring=[];
+let _fbReady=false;
+let staffLabel='Staff'; // overridden from Firebase settings / industry
+let sel=new Date();
+let pendAppt=null, pendBarber=null, pendColor=null;
+let recSelBarber=null, recSelDay=1, recSelFreq=1;
+
+// Firebase writes
+const saveB  =()=>DB.ref('barbers').set(barbers);
+const saveD  =()=>DB.ref('appts').set(data);
+const saveRec=()=>DB.ref('recs').set(recurring);
+
+// Null-sentinel helpers
+const isBlocked  = v => !!(v && v._c===1);
+const isExplicit = v => v !== undefined && !isBlocked(v);
+
+// ══════════════════════════════════════
+//  RECURRING HELPERS
+// ══════════════════════════════════════
+const wksBetween=(ds1,ds2)=>Math.round((new Date(ds2+'T00:00:00')-new Date(ds1+'T00:00:00'))/604800000);
+function getRecForSlot(bid,date,h,m){
+  const dow=date.getDay(),ds=fmtD(date);
+  return recurring.find(r=>r.barberId===bid&&r.dow===dow&&r.hour===h&&r.minute===m&&r.startDate<=ds&&wksBetween(r.startDate,ds)%r.every===0);
+}
+
+// ══════════════════════════════════════
+//  WEEK HELPERS
+// ══════════════════════════════════════
+function weekMon(d){const v=new Date(d),dow=v.getDay();v.setDate(v.getDate()-(dow===0?6:dow-1));v.setHours(0,0,0,0);return v;}
+function weekDays(mon){return Array.from({length:6},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});}
+function todayHasAppts(){const pfx=fmtD(new Date())+'|';return Object.keys(data).some(k=>k.startsWith(pfx));}
+
+// ══════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════
+function renderWeekLabel(){
+  const mon=weekMon(sel),days=weekDays(mon),a=days[0],z=days[5];
+  $('wLabel').textContent=a.getMonth()===z.getMonth()
+    ?`${a.getDate()}–${z.getDate()} ${MN[a.getMonth()]} ${a.getFullYear()}`
+    :`${a.getDate()} ${MN[a.getMonth()]} – ${z.getDate()} ${MN[z.getMonth()]}`;
+}
+function renderDayTabs(){
+  const days=weekDays(weekMon(sel)),el=$('dtabs');el.innerHTML='';
+  const showDot=todayHasAppts();
+  days.forEach(day=>{
+    const active=day.toDateString()===sel.toDateString(),isT=isToday(day);
+    const t=document.createElement('div');t.className='dtab'+(active?' active':'')+(isT?' today':'');
+    t.innerHTML=`<div class="dtab-wd">${WD[day.getDay()]}</div><div class="dtab-dn">${day.getDate()}</div><div class="dtab-dot${isT&&showDot?' on':''}"></div>`;
+    t.onclick=()=>{sel=new Date(day);refresh();};
+    el.appendChild(t);
+  });
+}
+function renderBarberHeader(){
+  const el=$('bhdrCols');el.innerHTML='';
+  const visible=focusBarberId?barbers.filter(b=>b.id===focusBarberId):barbers;
+  visible.forEach((b)=>{
+    const idx=barbers.indexOf(b);
+    const col=document.createElement('div');col.className='bhdr-col';
+    col.innerHTML=`<span class="ci" style="background:${b.color};--ci-color:${b.color}"></span><span class="bn">${b.name}</span>`;
+    col.onclick=()=>openBarberSheet(idx);el.appendChild(col);
+  });
+}
+function renderGrid(){
+  const tg=$('tgutter'),bc=$('bcols');tg.innerHTML='';bc.innerHTML='';
+  for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
+    const d=document.createElement('div');d.className='ttick'+(m===0?'':' half');
+    d.textContent=m===0?`${h}:00`:`${h}:30`;tg.appendChild(d);
+  }
+  applyFocusMode();
+  const visible=focusBarberId?barbers.filter(b=>b.id===focusBarberId):barbers;
+  visible.forEach(b=>{
+    const col=document.createElement('div');col.className='bcol';
+    const covered=new Set();
+    for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
+      const v=data[aKey(sel,b.id,h,m)];
+      let sp=1;
+      if(isExplicit(v))sp=getSpan(v);
+      else if(v===undefined)sp=getRecForSlot(b.id,sel,h,m)?.span??1;
+      if(sp>1)for(let s=1;s<sp;s++){const mm=(h-DAY_START)*60+m+s*30,ch=DAY_START+Math.floor(mm/60),cm=mm%60;if(ch<DAY_END)covered.add(`${ch}_${cm}`);}
+    }
+    for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
+      const slot=document.createElement('div');slot.className='slot '+(m===0?'hr':'half');
+      slot.dataset.bid=b.id;slot.dataset.h=h;slot.dataset.m=m;
+      if(!covered.has(`${h}_${m}`)){
+        const k=aKey(sel,b.id,h,m),v=data[k];
+        const rec=(v===undefined)?getRecForSlot(b.id,sel,h,m):null;
+        if(isExplicit(v))slot.appendChild(buildChip(getName(v),getSpan(v),b,k,h,m,false,null));
+        else if(rec)slot.appendChild(buildChip(rec.name,rec.span||1,b,k,h,m,true,rec.id));
+        else slot.addEventListener('click',()=>openApptSheet(b.id,h,m));
+      }
+      col.appendChild(slot);
+    }
+    bc.appendChild(col);
+  });
+  drawNowLine();
+}
+function buildChip(name,span,barber,key,h,m,isRec,recId){
+  const chip=document.createElement('div');
+  chip.className='chip';
+  // Vibrant tinted background + thick colored border + glow = clear barber identity
+  chip.style.cssText=`background:${barber.color}2e;border-left:5px solid ${barber.color};box-shadow:inset 0 0 0 1px ${barber.color}55, 0 1px 6px ${barber.color}30;height:${span*SPX-4}px;`;
+  const nm=document.createElement('span');nm.className='chip-name';nm.textContent=name;chip.appendChild(nm);
+  if(isRec){const ri=document.createElement('span');ri.className='chip-rec';ri.textContent='↺';chip.appendChild(ri);}
+  const rz=document.createElement('div');rz.className='chip-rz';chip.appendChild(rz);
+  setupResize(rz,key,name,barber,h,m,span);
+  setupChip(chip,rz,key,name,span,barber,h,m,isRec,recId);
+  return chip;
+}
+function drawNowLine(){
+  document.querySelectorAll('.now-line').forEach(e=>e.remove());
+  if(!isToday(sel))return;
+  const now=new Date(),h=now.getHours(),m=now.getMinutes();
+  if(h<DAY_START||h>=DAY_END)return;
+  const top=((h-DAY_START)*60+m)/30*SPX;
+  // One line per .bcol (each already position:relative) — dot only on first column
+  const cols=document.querySelectorAll('.bcol');
+  cols.forEach((col,i)=>{
+    const ln=document.createElement('div');
+    ln.className='now-line'+(i>0?' nodot':'');
+    ln.style.top=top+'px';
+    col.appendChild(ln);
+  });
+}
+function scrollToNow(){
+  if(!isToday(sel))return;
+  const now=new Date(),h=now.getHours(),m=now.getMinutes();
+  if(h<DAY_START||h>=DAY_END)return;
+  $('grid').scrollTop=Math.max(0,((h-DAY_START)*2+Math.floor(m/30))*SPX-140);
+}
+// Sync barber header width to grid content width (scrollbar compensation)
+function syncBhdr(){
+  const g=$('grid'), h=$('bhdr');
+  if(!g||!h)return;
+  const sb=g.offsetWidth-g.clientWidth; // actual scrollbar width (0 on iOS overlay scrollbars)
+  h.style.paddingRight=sb>0?sb+'px':'';
+}
+function refresh(){renderWeekLabel();renderDayTabs();renderBarberHeader();renderGrid();requestAnimationFrame(syncBhdr);}
+window.addEventListener('resize',()=>requestAnimationFrame(syncBhdr));
+
+// ══════════════════════════════════════
+//  CHIP INTERACTION
+// ══════════════════════════════════════
+let tapBlocked=false;
+const DG={on:false,ghost:null,srcKey:null,srcName:null,srcSpan:1,srcIsRec:false,srcChip:null,srcSlot:null,overSlot:null};
+
+function setupChip(chip,rz,key,name,span,barber,h,m,isRec,recId){
+  let sx=0,sy=0,isTap=true,pressTimer=null,mvHandler=null;
+
+  chip.addEventListener('touchstart',e=>{
+    if(rz.contains(e.target))return;
+    const t=e.touches[0];sx=t.clientX;sy=t.clientY;isTap=true;
+    DG.srcKey=key;DG.srcName=name;DG.srcIsRec=isRec;
+    DG.srcSpan=isRec?span:getSpan(data[key]??1);
+    DG.srcChip=chip;DG.srcSlot=chip.parentElement;
+    mvHandler=(ev)=>{
+      const tt=ev.touches[0];
+      const dist=Math.hypot(tt.clientX-sx,tt.clientY-sy);
+      if(dist>8){
+        ev.preventDefault();isTap=false;
+        clearTimeout(pressTimer);pressTimer=null;
+        if(!DG.on){removeMv();beginDrag(tt.clientX,tt.clientY,barber.color);}
+      }
+    };
+    chip.addEventListener('touchmove',mvHandler,{passive:false});
+    chip.classList.add('press-active');
+    pressTimer=setTimeout(()=>{
+      pressTimer=null;
+      if(isTap){isTap=false;removeMv();beginDrag(sx,sy,barber.color);}
+    },480);
+  },{passive:true});
+
+  function removeMv(){if(mvHandler){chip.removeEventListener('touchmove',mvHandler);mvHandler=null;}}
+
+  chip.addEventListener('touchend',e=>{
+    chip.classList.remove('press-active');
+    removeMv();clearTimeout(pressTimer);pressTimer=null;
+    if(!DG.on&&isTap&&!tapBlocked){
+      e.preventDefault();
+      openApptSheet(barber.id,h,m,isRec,recId);
+    }
+    isTap=true;
+  },{passive:false});
+
+  chip.addEventListener('touchcancel',()=>{
+    chip.classList.remove('press-active');removeMv();clearTimeout(pressTimer);pressTimer=null;isTap=true;
+  },{passive:true});
+
+  let msx=0,msy=0,mMoved=false;
+  chip.addEventListener('mousedown',e=>{
+    if(e.button!==0||rz.contains(e.target))return;
+    msx=e.clientX;msy=e.clientY;mMoved=false;
+    DG.srcKey=key;DG.srcName=name;DG.srcIsRec=isRec;
+    DG.srcSpan=isRec?span:getSpan(data[key]??1);
+    DG.srcChip=chip;DG.srcSlot=chip.parentElement;
+    const onMM=ev=>{
+      if(Math.hypot(ev.clientX-msx,ev.clientY-msy)>5&&!DG.on){
+        mMoved=true;document.removeEventListener('mousemove',onMM);document.removeEventListener('mouseup',onMU);
+        beginMouseDrag(ev.clientX,ev.clientY,barber.color);
+      }
+    };
+    const onMU=()=>{document.removeEventListener('mousemove',onMM);document.removeEventListener('mouseup',onMU);};
+    document.addEventListener('mousemove',onMM);document.addEventListener('mouseup',onMU);
+  });
+  chip.addEventListener('click',e=>{
+    if(tapBlocked||mMoved){mMoved=false;return;}
+    e.stopPropagation();
+    openApptSheet(barber.id,h,m,isRec,recId);
+  });
+}
+
+// ── DRAG CORE ──
+function posGhost(g,x,y){g.style.left=(x-55)+'px';g.style.top=(y-22)+'px';}
+function hlSlot(x,y){
+  if(!DG.ghost)return null;
+  DG.ghost.style.display='none';const under=document.elementFromPoint(x,y);DG.ghost.style.display='';
+  const s=under?.closest?.('.slot')??null;
+  if(DG.overSlot!==s){DG.overSlot?.classList.remove('drag-over');if(s&&s!==DG.srcSlot)s.classList.add('drag-over');DG.overSlot=s;}
+  return s;
+}
+function beginDrag(cx,cy,color){
+  DG.on=true;if(navigator.vibrate)navigator.vibrate(40);
+  const g=document.createElement('div');g.className='drag-ghost';g.style.background=color;g.textContent=DG.srcName;
+  posGhost(g,cx,cy);document.body.appendChild(g);DG.ghost=g;
+  DG.srcChip?.classList.add('dragging');
+  document.addEventListener('touchmove',onDTM,{passive:false});
+  document.addEventListener('touchend', onDTE,{passive:true});
+}
+function beginMouseDrag(cx,cy,color){
+  DG.on=true;
+  const g=document.createElement('div');g.className='drag-ghost';g.style.background=color;g.textContent=DG.srcName;
+  posGhost(g,cx,cy);document.body.appendChild(g);DG.ghost=g;
+  DG.srcChip?.classList.add('dragging');
+  document.addEventListener('mousemove',onDMM);document.addEventListener('mouseup',onDME);
+}
+function onDTM(e){if(!DG.on)return;e.preventDefault();const t=e.touches[0];posGhost(DG.ghost,t.clientX,t.clientY);hlSlot(t.clientX,t.clientY);}
+function onDMM(e){if(!DG.on)return;posGhost(DG.ghost,e.clientX,e.clientY);hlSlot(e.clientX,e.clientY);}
+let pendDrop=null; // pending move waiting for confirmation
+
+function applyPendDrop(){
+  if(!pendDrop)return;
+  const{srcKey,srcName,srcSpan,srcIsRec,bid,h,m}=pendDrop;
+  const tk=aKey(sel,bid,h,m),tv=data[tk];
+  if(isExplicit(tv)){
+    data[srcKey]=tv;
+    data[tk]=makeVal(srcName,srcSpan);
+  }else{
+    data[tk]=makeVal(srcName,srcSpan);
+    if(isExplicit(data[srcKey])){delete data[srcKey];}
+    else if(srcIsRec){data[srcKey]={_c:1};}
+  }
+  saveD();if(navigator.vibrate)navigator.vibrate([10,30,10]);
+  pendDrop=null;
+}
+
+function commitDrop(x,y){
+  DG.ghost?.remove();DG.ghost=null;DG.overSlot?.classList.remove('drag-over');DG.overSlot=null;
+  DG.srcChip?.classList.remove('dragging');
+  const el=document.elementFromPoint(x,y),ts=el?.closest?.('.slot')??null;
+  if(ts&&ts!==DG.srcSlot){
+    const{bid,h,m}=ts.dataset;
+    if(bid){
+      // Store the pending move and show confirmation instead of applying immediately
+      const dstH=parseInt(h),dstM=parseInt(m);
+      const tk=aKey(sel,bid,dstH,dstM),tv=data[tk];
+      const existingName=isExplicit(tv)?getName(tv):null; // appointment already in target slot
+      pendDrop={srcKey:DG.srcKey,srcName:DG.srcName,srcSpan:DG.srcSpan,srcIsRec:DG.srcIsRec,
+                bid,h:dstH,m:dstM};
+      DG.on=false;DG.srcKey=DG.srcName=DG.srcChip=DG.srcSlot=null;DG.srcIsRec=false;
+      tapBlocked=true;setTimeout(()=>{tapBlocked=false;},350);
+      // Build popup body
+      const srcParts=pendDrop.srcKey.split('|');
+      const srcH=parseInt(srcParts[2]),srcM=parseInt(srcParts[3]),srcBid=srcParts[1];
+      const srcB=barbers.find(x=>x.id===srcBid), dstB=barbers.find(x=>x.id===bid);
+      const fmt=(hh,mm)=>String(hh).padStart(2,'0')+':'+(mm===0?'00':String(mm).padStart(2,'0'));
+      const dot=c=>`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${c};margin-right:4px;vertical-align:middle"></span>`;
+      const barberChanged=srcBid!==bid;
+      const fromLabel=(barberChanged?`${dot(srcB?.color||'#888')}${srcB?.name||''} `:'')+fmt(srcH,srcM);
+      const toLabel  =(barberChanged?`${dot(dstB?.color||'#888')}${dstB?.name||''} `:'')+fmt(dstH,dstM);
+      let html=`<b>${pendDrop.srcName}</b><br><span style="font-size:12px;opacity:.7">${fromLabel}&nbsp;→&nbsp;${toLabel}</span>`;
+      if(existingName){
+        html+=`<div style="margin-top:10px;padding:8px 10px;background:var(--sur3);border-radius:10px;border:1px solid var(--border2);font-size:12px;line-height:1.5">
+          ⚠️ ${t('move.swap')}<br><b style="color:var(--txt)">${existingName}</b> → ${fromLabel}</div>`;
+        $('moveOk').textContent=t('move.swapYes');
+      }else{
+        $('moveOk').textContent=t('move.yes');
+      }
+      $('moveBody').innerHTML=html;
+      $('moveBg').classList.add('open');
+      return;
+    }
+  }
+  DG.on=false;DG.srcKey=DG.srcName=DG.srcChip=DG.srcSlot=null;DG.srcIsRec=false;
+  tapBlocked=true;setTimeout(()=>{tapBlocked=false;},350);
+  refresh();
+}
+function onDTE(e){if(!DG.on)return;document.removeEventListener('touchmove',onDTM);document.removeEventListener('touchend',onDTE);const t=e.changedTouches[0];commitDrop(t.clientX,t.clientY);}
+function onDME(e){document.removeEventListener('mousemove',onDMM);document.removeEventListener('mouseup',onDME);if(!DG.on)return;commitDrop(e.clientX,e.clientY);}
+
+$('moveCancel').onclick=()=>{pendDrop=null;$('moveBg').classList.remove('open');refresh();};
+$('moveOk').onclick=()=>{applyPendDrop();$('moveBg').classList.remove('open');refresh();};
+$('moveBg').addEventListener('click',e=>{if(e.target===$('moveBg')){pendDrop=null;$('moveBg').classList.remove('open');refresh();}});
+
+// ══════════════════════════════════════
+//  RESIZE
+// ══════════════════════════════════════
+function setupResize(handle,key,chipName,barber,h,m,curSpan){
+  let sy=0,ns=curSpan;
+  function saveName(){return getName(data[key])||chipName;}
+  function maxSpan(){for(let s=1;;s++){const mm=(h-DAY_START)*60+m+s*30,nh=DAY_START+Math.floor(mm/60),nm=mm%60;if(nh>=DAY_END)return s;if(data[aKey(sel,barber.id,nh,nm)])return s;}}
+  handle.addEventListener('touchstart',e=>{e.stopPropagation();e.preventDefault();sy=e.touches[0].clientY;ns=curSpan;if(navigator.vibrate)navigator.vibrate(20);document.addEventListener('touchmove',rzMT,{passive:false});document.addEventListener('touchend',rzET,{passive:true});},{passive:false});
+  function rzMT(e){e.preventDefault();const dy=e.touches[0].clientY-sy;ns=Math.min(maxSpan(),Math.max(1,Math.round(curSpan+dy/SPX)));const c=handle.closest('.chip');if(c)c.style.height=(ns*SPX-4)+'px';}
+  function rzET(){document.removeEventListener('touchmove',rzMT);document.removeEventListener('touchend',rzET);data[key]=makeVal(saveName(),ns);saveD();refresh();}
+  handle.addEventListener('mousedown',e=>{e.stopPropagation();e.preventDefault();sy=e.clientY;ns=curSpan;document.addEventListener('mousemove',rzMM);document.addEventListener('mouseup',rzEM);});
+  function rzMM(e){const dy=e.clientY-sy;ns=Math.min(maxSpan(),Math.max(1,Math.round(curSpan+dy/SPX)));const c=handle.closest('.chip');if(c)c.style.height=(ns*SPX-4)+'px';}
+  function rzEM(){document.removeEventListener('mousemove',rzMM);document.removeEventListener('mouseup',rzEM);data[key]=makeVal(saveName(),ns);saveD();refresh();}
+}
+
+// ══════════════════════════════════════
+//  APPOINTMENT SHEET
+// ══════════════════════════════════════
+function openApptSheet(bid,h,m,isRec,recId){
+  pendAppt={bid,h,m,isRec:!!isRec,recId:recId||null};
+  const b=barbers.find(x=>x.id===bid)||{name:'—'},k=aKey(sel,bid,h,m),ex=data[k];
+  const hh=String(h).padStart(2,'0'),mm=m===0?'00':m;
+  $('apptSub').textContent=`${hh}:${mm} · ${b.name}`;
+  const hasExplicit=(k in data)&&isExplicit(data[k]);
+  $('apptTtl').textContent=hasExplicit?t('appt.edit'):t('appt.new');
+  const rec=isRec?recurring.find(r=>r.id===recId):null;
+  $('apptInp').value=getName(ex)||(rec?rec.name:'');
+  const btns=$('apptBtns');
+  if(hasExplicit){
+    btns.innerHTML=`<button class="sbtn-del" id="aDel">🗑</button><button class="sbtn sbtn-cancel" id="aCnl">${t('btn.cancel')}</button><button class="sbtn sbtn-save" id="aSave">${t('btn.save')}</button>`;
+    $('aDel').onclick=doApptDel;
+  }else{
+    btns.innerHTML=`<button class="sbtn sbtn-cancel" id="aCnl">${t('btn.cancel')}</button><button class="sbtn sbtn-save" id="aSave">${t('btn.save')}</button>`;
+  }
+  $('aCnl').onclick=closeAppt;$('aSave').onclick=doApptSave;
+  $('apptOvl').classList.add('open');setTimeout(()=>$('apptInp').focus(),310);
+}
+function closeAppt(){$('apptOvl').classList.remove('open');$('apptInp').blur();pendAppt=null;}
+function doApptSave(){
+  const n=$('apptInp').value.trim();if(!n){$('apptInp').style.borderColor='var(--red-hi)';return;}
+  const k=aKey(sel,pendAppt.bid,pendAppt.h,pendAppt.m);
+  data[k]=makeVal(n,getSpan(data[k]??1));saveD();closeAppt();refresh();
+}
+function doApptDel(){delete data[aKey(sel,pendAppt.bid,pendAppt.h,pendAppt.m)];saveD();closeAppt();refresh();}
+$('apptOvl').addEventListener('click',e=>{if(e.target===$('apptOvl'))closeAppt();});
+$('apptInp').addEventListener('keydown',e=>{if(e.key==='Enter')doApptSave();});
+$('apptInp').addEventListener('input',()=>{$('apptInp').style.borderColor='';});
+
+// ══════════════════════════════════════
+//  BARBER SHEET
+// ══════════════════════════════════════
+function openBarberSheet(idx){
+  pendBarber=idx;const isNew=idx===null,b=isNew?null:barbers[idx];
+  pendColor=isNew?PALETTE[barbers.length%PALETTE.length]:b.color;
+  $('barberSub').textContent=isNew?t('barber.addSub'):t('barber.editSub');
+  $('barberTtl').textContent=isNew?(currentLang==='el'?`Νέο ${staffLabel}`:`New ${staffLabel}`):b.name;
+  $('barberInp').value=isNew?'':b.name;
+  $('barberDel').classList.toggle('hidden',isNew);
+  $('barberDiv').style.display=isNew?'none':'';
+  $('confirmBox').classList.remove('show');
+  const sw=$('swatchRow');sw.innerHTML='';
+  PALETTE.forEach(c=>{
+    const s=document.createElement('div');s.className='swatch'+(c===pendColor?' sel':'');s.style.background=c;
+    s.onclick=()=>{pendColor=c;sw.querySelectorAll('.swatch').forEach(x=>x.classList.remove('sel'));s.classList.add('sel');};
+    sw.appendChild(s);
+  });
+  $('barberOvl').classList.add('open');setTimeout(()=>$('barberInp').focus(),310);
+}
+function closeBarber(){$('barberOvl').classList.remove('open');$('barberInp').blur();pendBarber=null;pendColor=null;$('confirmBox').classList.remove('show');}
+function doBarberSave(){
+  const n=$('barberInp').value.trim();if(!n){$('barberInp').style.borderColor='var(--red-hi)';return;}
+  if(pendBarber===null)barbers.push({id:uid(),name:n,color:pendColor});
+  else{barbers[pendBarber].name=n;barbers[pendBarber].color=pendColor;}
+  saveB();closeBarber();refresh();
+}
+$('barberCancel').onclick=closeBarber;$('barberSave').onclick=doBarberSave;
+$('barberDel').onclick=()=>$('confirmBox').classList.add('show');
+$('confirmNo').onclick=()=>$('confirmBox').classList.remove('show');
+$('confirmYes').onclick=()=>{
+  const b=barbers[pendBarber];
+  Object.keys(data).forEach(k=>{if(k.includes(`|${b.id}|`))delete data[k];});
+  recurring=recurring.filter(r=>r.barberId!==b.id);
+  saveD();saveRec();barbers.splice(pendBarber,1);saveB();closeBarber();refresh();
+};
+$('barberOvl').addEventListener('click',e=>{if(e.target===$('barberOvl'))closeBarber();});
+$('barberInp').addEventListener('keydown',e=>{if(e.key==='Enter')doBarberSave();});
+$('barberInp').addEventListener('input',()=>{$('barberInp').style.borderColor='';});
+
+// ══════════════════════════════════════
+//  RECURRING SHEET
+// ══════════════════════════════════════
+function openRecSheet(){
+  recSelBarber=barbers[0]?.id??null;recSelDay=1;recSelFreq=1;
+  $('recStaffLbl').textContent=staffLabel;
+  const bp=$('recBarberPills');bp.innerHTML='';
+  barbers.forEach(b=>{
+    const p=document.createElement('button');p.className='pill'+(b.id===recSelBarber?' sel':'');
+    if(b.id===recSelBarber)p.style.cssText=`background:${b.color};border-color:${b.color};color:#fff`;
+    p.textContent=b.name;
+    p.onclick=()=>{recSelBarber=b.id;bp.querySelectorAll('.pill').forEach(x=>{x.classList.remove('sel');x.style.cssText='';});p.classList.add('sel');p.style.cssText=`background:${b.color};border-color:${b.color};color:#fff`;};
+    bp.appendChild(p);
+  });
+  const dp=$('recDayPills');dp.innerHTML='';
+  [1,2,3,4,5,6].forEach(dow=>{
+    const p=document.createElement('button');p.className='pill'+(dow===recSelDay?' sel':'');p.textContent=WD[dow];
+    p.onclick=()=>{recSelDay=dow;dp.querySelectorAll('.pill').forEach(x=>x.classList.remove('sel'));p.classList.add('sel');};
+    dp.appendChild(p);
+  });
+  const ts=$('recTimeSel');ts.innerHTML='';
+  for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
+    const o=document.createElement('option');o.value=`${h}:${m}`;o.textContent=`${String(h).padStart(2,'0')}:${m===0?'00':m}`;ts.appendChild(o);
+  }
+  $('recFreqPills').querySelectorAll('[data-freq]').forEach(b=>{
+    b.classList.toggle('sel',parseInt(b.dataset.freq)===recSelFreq);
+    b.onclick=()=>{recSelFreq=parseInt(b.dataset.freq);$('recFreqPills').querySelectorAll('[data-freq]').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');};
+  });
+  $('recNameInp').value='';
+  renderRecList();
+  $('recOvl').classList.add('open');setTimeout(()=>$('recNameInp').focus(),310);
+}
+function closeRecSheet(){$('recOvl').classList.remove('open');}
+function renderRecList(){
+  const el=$('recList');el.innerHTML='';
+  if(!recurring.length){el.innerHTML=`<div class="rec-empty">${t('rec.empty')}</div>`;return;}
+  recurring.forEach((r,i)=>{
+    const b=barbers.find(x=>x.id===r.barberId);if(!b)return;
+    const item=document.createElement('div');item.className='rec-item';
+    const freq=r.every===1?t('rec.everyWeek'):t('rec.everyN').replace('{n}',r.every);
+    item.innerHTML=`<div class="rec-dot" style="background:${b.color}"></div><div class="rec-info"><div class="rec-name">${r.name}</div><div class="rec-meta">${b.name} · ${WD_FULL[r.dow]} ${String(r.hour).padStart(2,'0')}:${r.minute===0?'00':r.minute} · ${freq}</div></div><button class="rec-rm" data-i="${i}">✕</button>`;
+    item.querySelector('.rec-rm').onclick=()=>{recurring.splice(i,1);saveRec();renderRecList();refresh();};
+    el.appendChild(item);
+  });
+}
+$('recSave').onclick=()=>{
+  const n=$('recNameInp').value.trim();if(!n){$('recNameInp').style.borderColor='var(--red-hi)';return;}
+  const[rh,rm]=$('recTimeSel').value.split(':').map(Number);
+  recurring.push({id:uid(),barberId:recSelBarber,dow:recSelDay,hour:rh,minute:rm,name:n,span:1,every:recSelFreq,startDate:fmtD(sel)});
+  saveRec();renderRecList();refresh();$('recNameInp').value='';
+};
+$('recCancel').onclick=closeRecSheet;
+$('recOvl').addEventListener('click',e=>{if(e.target===$('recOvl'))closeRecSheet();});
+$('recNameInp').addEventListener('input',()=>{$('recNameInp').style.borderColor='';});
+
+// ══════════════════════════════════════
+//  FUTURE APPOINTMENT SHEET
+// ══════════════════════════════════════
+let futSelBarber=null;
+
+function openFutSheet(){
+  futSelBarber=barbers[0]?.id??null;
+  $('futStaffLbl').textContent=staffLabel;
+  const tom=new Date();tom.setDate(tom.getDate()+1);
+  $('futDate').value=fmtD(tom);
+  $('futDate').min=fmtD(new Date());
+  const bp=$('futBarberPills');bp.innerHTML='';
+  barbers.forEach(b=>{
+    const p=document.createElement('button');p.className='pill'+(b.id===futSelBarber?' sel':'');
+    if(b.id===futSelBarber)p.style.cssText=`background:${b.color};border-color:${b.color};color:#fff`;
+    p.textContent=b.name;
+    p.onclick=()=>{
+      futSelBarber=b.id;
+      bp.querySelectorAll('.pill').forEach(x=>{x.classList.remove('sel');x.style.cssText='';});
+      p.classList.add('sel');p.style.cssText=`background:${b.color};border-color:${b.color};color:#fff`;
+      $('futConflict').style.display='none';futConfirmPending=false;
+    };
+    bp.appendChild(p);
+  });
+  const ts=$('futTimeSel');ts.innerHTML='';
+  for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
+    const o=document.createElement('option');o.value=`${h}:${m}`;
+    o.textContent=`${String(h).padStart(2,'0')}:${m===0?'00':m}`;ts.appendChild(o);
+  }
+  $('futNameInp').value='';
+  $('futConflict').style.display='none';
+  futConfirmPending=false;
+  $('futOvl').classList.add('open');
+  setTimeout(()=>$('futNameInp').focus(),310);
+}
+function closeFutSheet(){$('futOvl').classList.remove('open');}
+
+function getFreeSlotsForDay(d,barberId){
+  const covered=new Set();
+  for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
+    const v=data[aKey(d,barberId,h,m)];
+    let sp=1;
+    if(isExplicit(v))sp=getSpan(v);
+    else if(v===undefined)sp=getRecForSlot(barberId,d,h,m)?.span??1;
+    if(sp>1)for(let s=1;s<sp;s++){const mm=(h-DAY_START)*60+m+s*30,ch=DAY_START+Math.floor(mm/60),cm=mm%60;if(ch<DAY_END)covered.add(`${ch}_${cm}`);}
+  }
+  const free=[];
+  for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
+    if(covered.has(`${h}_${m}`))continue;
+    const k=aKey(d,barberId,h,m),v=data[k];
+    const rec=(v===undefined)?getRecForSlot(barberId,d,h,m):null;
+    if(!isExplicit(v)&&!rec)free.push({h,m});
+  }
+  return free;
+}
+
+let futConfirmPending=false;
+function doFutSave(force){
+  const n=$('futNameInp').value.trim(),dateVal=$('futDate').value;
+  $('futConflict').style.display='none';
+  if(!n){$('futNameInp').style.borderColor='var(--red-hi)';return;}
+  if(!dateVal){$('futDate').style.borderColor='var(--red-hi)';return;}
+  if(!futSelBarber){return;}
+  const d=new Date(dateVal+'T00:00:00');
+  const[fh,fm]=$('futTimeSel').value.split(':').map(Number);
+  const k=aKey(d,futSelBarber,fh,fm);
+  const occupied=isExplicit(data[k])||(data[k]===undefined&&!!getRecForSlot(futSelBarber,d,fh,fm));
+  if(!force&&occupied){
+    const existName=isExplicit(data[k])?getName(data[k]):(getRecForSlot(futSelBarber,d,fh,fm)?.name??t('fut.recurringClient'));
+    $('futConflictMsg').textContent=`${String(fh).padStart(2,'0')}:${fm===0?'00':fm} — "${existName}"`;
+    const free=getFreeSlotsForDay(d,futSelBarber);
+    const fsEl=$('futConflictSlots');fsEl.innerHTML='';
+    if(free.length){
+      $('futConflictFree').textContent=t('fut.conflictSlots');
+      free.forEach(({h,m})=>{
+        const p=document.createElement('button');p.className='pill';
+        p.style.cssText='font-size:12px;padding:6px 10px';
+        p.textContent=`${String(h).padStart(2,'0')}:${m===0?'00':m}`;
+        p.onclick=()=>{$('futTimeSel').value=`${h}:${m}`;$('futConflict').style.display='none';futConfirmPending=false;};
+        fsEl.appendChild(p);
+      });
+    }else{
+      $('futConflictFree').textContent=t('fut.noSlots');
+    }
+    $('futConflict').style.display='block';
+    futConfirmPending=true;
+    return;
+  }
+  futConfirmPending=false;
+  data[k]=makeVal(n,1);saveD();
+  if(fmtD(d)===fmtD(sel))refresh();
+  $('futSave').textContent=t('fut.saved');
+  setTimeout(()=>{closeFutSheet();$('futSave').textContent=t('btn.save');},700);
+}
+$('futSave').onclick=()=>doFutSave(futConfirmPending);
+$('futCancel').onclick=()=>{futConfirmPending=false;closeFutSheet();};
+$('futOvl').addEventListener('click',e=>{if(e.target===$('futOvl'))closeFutSheet();});
+$('futNameInp').addEventListener('keydown',e=>{if(e.key==='Enter')$('futSave').click();});
+$('futNameInp').addEventListener('input',()=>{$('futNameInp').style.borderColor='';});
+$('futDate').addEventListener('change',()=>{$('futDate').style.borderColor='';$('futConflict').style.display='none';futConfirmPending=false;});
+$('futTimeSel').addEventListener('change',()=>{$('futConflict').style.display='none';futConfirmPending=false;});
+
+// ══════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════
+$('btnRec').onclick    =openRecSheet;
+$('btnFuture').onclick =openFutSheet;
+$('btnAdd').onclick   =()=>openBarberSheet(null);
+$('btnAddB').onclick  =()=>openBarberSheet(null);
+$('btnPrev').onclick  =()=>{sel=new Date(sel);sel.setDate(sel.getDate()-7);refresh();};
+$('btnNext').onclick  =()=>{sel=new Date(sel);sel.setDate(sel.getDate()+7);refresh();};
+$('btnToday').onclick =()=>{sel=new Date();refresh();setTimeout(scrollToNow,50);};
+
+// ══════════════════════════════════════
+//  FONT PICKER
+// ══════════════════════════════════════
+const FONTS = [
+  { id:'pacifico',  label:'Pacifico',        family:"'Pacifico',Georgia,serif"          },
+  { id:'satisfy',   label:'Satisfy',          family:"'Satisfy',cursive"                 },
+  { id:'cinzel',    label:'Cinzel',           family:"'Cinzel',serif"                    },
+  { id:'dancing',   label:'Dancing',          family:"'Dancing Script',cursive"          },
+  { id:'playfair',  label:'Playfair',         family:"'Playfair Display',serif"          },
+  { id:'oswald',    label:'Oswald',           family:"'Oswald',sans-serif"               },
+  { id:'bebas',     label:'Bebas Neue',       family:"'Bebas Neue',sans-serif"           },
+  { id:'righteous', label:'Righteous',        family:"'Righteous',cursive"               },
+  { id:'teko',      label:'Teko',             family:"'Teko',sans-serif"                 },
+  { id:'rajdhani',  label:'Rajdhani',         family:"'Rajdhani',sans-serif"             },
+  { id:'nunito',    label:'Nunito',           family:"'Nunito',sans-serif"               },
+  { id:'inter',     label:'Inter',            family:"'Inter',sans-serif"                },
+];
+let currentFont='pacifico';
+
+function applyFont(fontId){
+  const f=FONTS.find(x=>x.id===fontId)||FONTS[0];
+  $('hdrShopName').style.fontFamily=f.family;
+  currentFont=fontId;
+}
+
+function buildFontPicker(){
+  const row=$('fontPickRow'); row.innerHTML='';
+  const shopName=$('hdrShopName').textContent||'Shop';
+  FONTS.forEach(f=>{
+    const btn=document.createElement('button');
+    btn.className='font-pick-btn'+(f.id===currentFont?' sel':'');
+    btn.style.fontFamily=f.family;
+    btn.textContent=shopName;
+    btn.onclick=()=>{
+      currentFont=f.id;
+      applyFont(f.id);
+      row.querySelectorAll('.font-pick-btn').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+    };
+    row.appendChild(btn);
+  });
+}
+
+// ══════════════════════════════════════
+//  FOCUS / MY VIEW MODE
+// ══════════════════════════════════════
+let focusBarberId = localStorage.getItem('focusBarberId')||null;
+let focusOriginalPrimary=null, focusOriginalAccent=null; // stored when focus activates
+
+// Lighten a hex color by mixing with white (amount 0..1)
+function lightenHex(hex, amount=0.45){
+  const c=hex.replace('#','');
+  const r=parseInt(c.substring(0,2),16),g=parseInt(c.substring(2,4),16),b=parseInt(c.substring(4,6),16);
+  const lr=Math.round(r+(255-r)*amount),lg=Math.round(g+(255-g)*amount),lb=Math.round(b+(255-b)*amount);
+  return '#'+[lr,lg,lb].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+function applyFocusMode(){
+  const bar=$('focusBar');
+  if(focusBarberId){
+    const b=barbers.find(x=>x.id===focusBarberId);
+    if(b){
+      $('focusBarName').textContent=`◎ ${b.name}`;
+      bar.classList.add('active');
+      // Apply barber's personal color as theme
+      if(focusOriginalPrimary===null){
+        focusOriginalPrimary=currentPrimary;
+        focusOriginalAccent=getComputedStyle(document.documentElement).getPropertyValue('--gold').trim();
+      }
+      applyTheme(b.color, lightenHex(b.color, 0.5));
+    } else {
+      // barber was deleted — restore and clear
+      focusBarberId=null;
+      localStorage.removeItem('focusBarberId');
+      bar.classList.remove('active');
+      if(focusOriginalPrimary!==null){applyTheme(focusOriginalPrimary,focusOriginalAccent);focusOriginalPrimary=null;focusOriginalAccent=null;}
+    }
+  } else {
+    bar.classList.remove('active');
+  }
+}
+
+function openFocusSheet(){
+  const pp=$('focusPills'); pp.innerHTML='';
+  barbers.forEach(b=>{
+    const p=document.createElement('button');
+    p.className='pill'+(b.id===focusBarberId?' sel':'');
+    if(b.id===focusBarberId) p.style.cssText=`background:${b.color};border-color:${b.color};color:#fff`;
+    p.textContent=b.name;
+    p.onclick=()=>{
+      // Save original theme before switching focus (reset any previous focus theme first)
+      if(focusBarberId!==b.id){
+        if(focusOriginalPrimary===null){
+          focusOriginalPrimary=currentPrimary;
+          focusOriginalAccent=getComputedStyle(document.documentElement).getPropertyValue('--gold').trim();
+        }
+      }
+      focusBarberId=b.id;
+      localStorage.setItem('focusBarberId',b.id);
+      $('focusOvl').classList.remove('open');
+      applyFocusMode();
+      refresh();
+    };
+    pp.appendChild(p);
+  });
+  $('focusOvl').classList.add('open');
+}
+
+$('focusCancel').onclick=()=>$('focusOvl').classList.remove('open');
+$('focusOvl').addEventListener('click',e=>{if(e.target===$('focusOvl'))$('focusOvl').classList.remove('open');});
+$('focusExit').onclick=()=>{
+  focusBarberId=null;
+  localStorage.removeItem('focusBarberId');
+  $('focusBar').classList.remove('active');
+  // Restore original theme
+  if(focusOriginalPrimary!==null){
+    applyTheme(focusOriginalPrimary, focusOriginalAccent);
+    currentPrimary=focusOriginalPrimary;
+    focusOriginalPrimary=null;
+    focusOriginalAccent=null;
+  }
+  refresh();
+};
+$('btnFocus').onclick=openFocusSheet;
+
+// ══════════════════════════════════════
+//  WEEK VIEW
+// ══════════════════════════════════════
+let wvOffset=0;
+
+function getWeekMonday(offset){
+  const today=new Date(),day=today.getDay();
+  const diff=day===0?-6:1-day;
+  const mon=new Date(today);
+  mon.setDate(today.getDate()+diff+offset*7);
+  mon.setHours(0,0,0,0);
+  return mon;
+}
+
+const WV_DAY_EL=['Κυρ','Δευ','Τρί','Τετ','Πέμ','Παρ','Σάβ'];
+const WV_DAY_EN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function openWeekView(){
+  if(!focusBarberId)return;
+  wvOffset=0;
+  renderWeekView();
+  $('wvBg').classList.add('open');
+}
+
+function renderWeekView(){
+  const bid=focusBarberId;
+  const barber=barbers.find(b=>b.id===bid);
+  if(!barber)return;
+  const mon=getWeekMonday(wvOffset);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  const loc=currentLang==='el'?'el-GR':'en-GB';
+  const fmtShort=d=>d.toLocaleDateString(loc,{day:'numeric',month:'short'});
+  $('wvBarberName').textContent=`◎ ${barber.name}`;
+  $('wvWeekLabel').textContent=`${fmtShort(mon)} – ${fmtShort(sun)}`;
+  const dayNames=currentLang==='el'?WV_DAY_EL:WV_DAY_EN;
+  const body=$('wvBody');body.innerHTML='';
+  const todayStr=fmtD(new Date());
+
+  for(let i=0;i<7;i++){
+    const day=new Date(mon);day.setDate(mon.getDate()+i);
+    const dayStr=fmtD(day);
+    const isT=dayStr===todayStr;
+
+    // Build covered set (multi-span)
+    const covered=new Set();
+    for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
+      const v=data[`${dayStr}|${bid}|${h}|${m}`];
+      let sp=1;
+      if(isExplicit(v))sp=getSpan(v);
+      else if(v===undefined)sp=getRecForSlot(bid,day,h,m)?.span??1;
+      if(sp>1)for(let s=1;s<sp;s++){const mm=(h-DAY_START)*60+m+s*30,ch=DAY_START+Math.floor(mm/60),cm=mm%60;if(ch<DAY_END)covered.add(`${ch}_${cm}`);}
+    }
+
+    // Build events list (merge free slots)
+    const events=[];
+    let freeStart=null;
+    for(let h=DAY_START;h<DAY_END;h++)for(let m=0;m<60;m+=30){
+      if(covered.has(`${h}_${m}`))continue;
+      const v=data[`${dayStr}|${bid}|${h}|${m}`];
+      const rec=v===undefined?getRecForSlot(bid,day,h,m):null;
+      const booked=isExplicit(v)||!!rec;
+      if(booked){
+        if(freeStart!==null){events.push({type:'free',sh:freeStart.h,sm:freeStart.m,eh:h,em:m});freeStart=null;}
+        const sp=isExplicit(v)?getSpan(v):(rec.span||1);
+        const name=isExplicit(v)?getName(v):rec.name;
+        const endMin=(h-DAY_START)*60+m+sp*30;
+        const eh=DAY_START+Math.floor(endMin/60),em=endMin%60;
+        events.push({type:'booked',sh:h,sm:m,eh,em,name});
+      }else{
+        if(freeStart===null)freeStart={h,m};
+      }
+    }
+    if(freeStart!==null)events.push({type:'free',sh:freeStart.h,sm:freeStart.m,eh:DAY_END,em:0});
+
+    const fmt=(h,m)=>`${String(h).padStart(2,'0')}:${m===0?'00':String(m).padStart(2,'0')}`;
+    const dateStr=day.toLocaleDateString(loc,{day:'numeric',month:'short'});
+    const todayLbl=currentLang==='el'?'ΣΗΜΕΡΑ':'TODAY';
+    const freeDayLbl=currentLang==='el'?'✓ Ελεύθερη μέρα':'✓ Free day';
+    const freeLbl=currentLang==='el'?'Ελεύθερο':'Free';
+
+    let evHTML='';
+    const freeEvents=events.filter(e=>e.type==='free');
+    const bookedEvents=events.filter(e=>e.type==='booked');
+
+    if(bookedEvents.length===0){
+      evHTML=`<div class="wv-free-day">${freeDayLbl}</div>`;
+    }else{
+      events.forEach(ev=>{
+        const dur=(ev.eh*60+ev.em)-(ev.sh*60+ev.sm);
+        if(ev.type==='booked'){
+          evHTML+=`<div class="wv-ev wv-ev-booked" style="border-left-color:${barber.color}">
+            <span class="wv-ev-time">${fmt(ev.sh,ev.sm)}</span>
+            <span class="wv-ev-label">${ev.name}</span>
+          </div>`;
+        }else if(dur>=30){
+          evHTML+=`<div class="wv-ev wv-ev-free">
+            <span class="wv-ev-time">${fmt(ev.sh,ev.sm)} – ${fmt(ev.eh,ev.em)}</span>
+            <span class="wv-ev-label">${freeLbl}</span>
+          </div>`;
+        }
+      });
+    }
+
+    const card=document.createElement('div');
+    card.className='wv-day'+(isT?' wv-today':'');
+    card.innerHTML=`<div class="wv-day-hdr">
+      <span class="wv-dname">${dayNames[day.getDay()]}</span>
+      <span class="wv-ddate">${dateStr}</span>
+      ${isT?`<span class="wv-today-tag">${todayLbl}</span>`:''}
+    </div><div class="wv-events">${evHTML}</div>`;
+    body.appendChild(card);
+  }
+}
+
+$('focusWeekBtn').onclick=openWeekView;
+$('wvClose').onclick=()=>$('wvBg').classList.remove('open');
+$('wvPrev').onclick=()=>{wvOffset--;renderWeekView();};
+$('wvNext').onclick=()=>{wvOffset++;renderWeekView();};
+
+// ══════════════════════════════════════
+//  LOGO IMAGE
+// ══════════════════════════════════════
+let currentLogoB64=null;
+
+function applyLogoImg(b64){
+  currentLogoB64=b64||null;
+  const icon=$('logoIcon'),letter=$('logoLetter');
+  if(b64){
+    icon.style.backgroundImage=`url(${b64})`;
+    if(letter)letter.style.display='none';
+  }else{
+    icon.style.backgroundImage='';
+    if(letter)letter.style.display='';
+  }
+  // Re-draw favicon with new logo
+  updateFavicon($('hdrShopName').textContent||'S');
+}
+$('logoIcon').addEventListener('click',()=>$('logoImgInput').click());
+$('logoImgInput').addEventListener('change',e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      // Save at 256px for crisp favicon; clip to circle; PNG for transparency
+      const canvas=document.createElement('canvas');
+      canvas.width=256;canvas.height=256;
+      const ctx=canvas.getContext('2d');
+      // Clip to circle so background is transparent
+      ctx.beginPath();ctx.arc(128,128,128,0,Math.PI*2);ctx.clip();
+      const size=Math.min(img.width,img.height);
+      const ox=(img.width-size)/2,oy=(img.height-size)/2;
+      ctx.drawImage(img,ox,oy,size,size,0,0,256,256);
+      const b64=canvas.toDataURL('image/png');
+      DB.ref('settings/logoImg').set(b64);
+      applyLogoImg(b64);
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  $('logoImgInput').value='';
+});
+
+// ══════════════════════════════════════
+//  SHOP NAME
+// ══════════════════════════════════════
+function applyShopName(name,sub){
+  $('hdrShopName').textContent=name||'Schedule';
+  $('hdrShopSub').textContent=sub||'';
+  updateFavicon(name);
+}
+function updateFavicon(shopName){
+  try{
+    const c=document.createElement('canvas');c.width=c.height=256;
+    const ctx=c.getContext('2d');
+    ctx.clearRect(0,0,256,256);
+    if(currentLogoB64){
+      // Use the uploaded logo, already clipped to circle (transparent bg)
+      const img=new Image();
+      img.onload=()=>{
+        ctx.clearRect(0,0,256,256);
+        ctx.beginPath();ctx.arc(128,128,128,0,Math.PI*2);ctx.clip();
+        ctx.drawImage(img,0,0,256,256);
+        _setFaviconFromCanvas(c);
+      };
+      img.src=currentLogoB64;
+      return; // will be set async via img.onload
+    }
+    // Fallback: themed circle with first letter
+    const primary=getComputedStyle(document.documentElement).getPropertyValue('--red').trim()||'#8b1229';
+    const accent =getComputedStyle(document.documentElement).getPropertyValue('--gold').trim()||'#c8aa6e';
+    ctx.beginPath();ctx.arc(128,128,122,0,Math.PI*2);
+    ctx.fillStyle=primary;ctx.fill();
+    ctx.strokeStyle=accent;ctx.lineWidth=12;ctx.stroke();
+    const letter=(shopName||'S')[0].toUpperCase();
+    ctx.fillStyle='#fff';ctx.font='bold 124px Inter,Arial,sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(letter,128,132);
+    _setFaviconFromCanvas(c);
+  }catch(e){}
+}
+function _setFaviconFromCanvas(c){
+  const url=c.toDataURL('image/png');
+  // Browser tab favicon
+  let lnk=document.querySelector("link[rel='icon']")||document.querySelector("link[rel='shortcut icon']");
+  if(!lnk){lnk=document.createElement('link');lnk.rel='icon';document.head.appendChild(lnk);}
+  lnk.type='image/png';lnk.href=url;
+  // iOS home screen icon
+  let touch=document.querySelector("link[rel='apple-touch-icon']");
+  if(!touch){touch=document.createElement('link');touch.rel='apple-touch-icon';document.head.appendChild(touch);}
+  touch.href=url;
+}
+
+// ══════════════════════════════════════
+//  SETUP — INDUSTRY SELECTION
+// ══════════════════════════════════════
+let setupSelIndustry=INDUSTRIES[0];
+
+function buildIndustryGrid(){
+  const grid=$('industryGrid');grid.innerHTML='';
+  INDUSTRIES.forEach(ind=>{
+    const card=document.createElement('div');
+    card.className='industry-card'+(ind.id===setupSelIndustry.id?' sel':'');
+    card.innerHTML=`<div class="industry-card-emoji">${ind.emoji}</div><div class="industry-card-label">${ind.label}</div>`;
+    card.onclick=()=>{
+      setupSelIndustry=ind;
+      grid.querySelectorAll('.industry-card').forEach(c=>c.classList.remove('sel'));
+      card.classList.add('sel');
+      applyTheme(ind.primary,ind.accent);
+      // GSAP step transition
+      if(typeof gsap!=='undefined'){
+        gsap.to($('setupStep1'),{opacity:0,y:-12,duration:.22,ease:'power2.in',onComplete:()=>{
+          $('setupStep1').classList.add('hidden');
+          $('setupStep2').classList.remove('hidden');
+          $('setupEmoji').textContent=ind.emoji;
+          $('setupIndustryLabel').textContent=ind.label;
+          gsap.fromTo($('setupStep2'),{opacity:0,y:16},{opacity:1,y:0,duration:.3,ease:'power2.out'});
+          setTimeout(()=>$('setupName').focus(),200);
+        }});
+      }else{
+        $('setupStep1').classList.add('hidden');
+        $('setupStep2').classList.remove('hidden');
+        $('setupEmoji').textContent=ind.emoji;
+        $('setupIndustryLabel').textContent=ind.label;
+        setTimeout(()=>$('setupName').focus(),200);
+      }
+    };
+    grid.appendChild(card);
+  });
+  // GSAP stagger entrance for industry cards
+  if(typeof gsap!=='undefined'){
+    gsap.from('#industryGrid .industry-card',{
+      scale:.88,opacity:0,duration:.35,
+      stagger:.04,ease:'back.out(1.4)'
+    });
+  }
+}
+
+$('setupBack').onclick=()=>{
+  if(typeof gsap!=='undefined'){
+    gsap.to($('setupStep2'),{opacity:0,y:10,duration:.2,ease:'power2.in',onComplete:()=>{
+      $('setupStep2').classList.add('hidden');
+      $('setupStep1').classList.remove('hidden');
+      gsap.fromTo($('setupStep1'),{opacity:0,y:-10},{opacity:1,y:0,duration:.28,ease:'power2.out'});
+    }});
+  }else{
+    $('setupStep2').classList.add('hidden');
+    $('setupStep1').classList.remove('hidden');
+  }
+};
+
+$('setupSave').onclick=()=>{
+  const name=$('setupName').value.trim();
+  if(!name){$('setupName').style.borderColor='var(--red-hi)';return;}
+  const sub=$('setupSub').value.trim()||setupSelIndustry.label;
+  DB.ref('settings/shopName').set(name);
+  DB.ref('settings/shopSub').set(sub);
+  DB.ref('settings/industry').set(setupSelIndustry.id);
+  DB.ref('settings/primaryColor').set(setupSelIndustry.primary);
+  DB.ref('settings/accentColor').set(setupSelIndustry.accent);
+  DB.ref('settings/emoji').set(setupSelIndustry.emoji);
+  DB.ref('settings/staffLabel').set(setupSelIndustry.staff);
+  staffLabel=setupSelIndustry.staff;
+  currentPrimary=setupSelIndustry.primary;
+  applyShopName(name,sub);
+  if(typeof gsap!=='undefined'){
+    gsap.to($('setupOvl'),{opacity:0,duration:.3,onComplete:()=>$('setupOvl').classList.add('hidden')});
+  }else{
+    $('setupOvl').classList.add('hidden');
+  }
+};
+$('setupName').addEventListener('keydown',e=>{if(e.key==='Enter')$('setupSave').click();});
+$('setupName').addEventListener('input',()=>{$('setupName').style.borderColor='';});
+
+// Edit shop name (tap on header words)
+$('logoWords').addEventListener('click',()=>{
+  $('shopNameInp').value=$('hdrShopName').textContent;
+  $('shopSubInp').value=$('hdrShopSub').textContent;
+  buildFontPicker();
+  $('shopNameOvl').classList.add('open');
+  setTimeout(()=>$('shopNameInp').focus(),310);
+});
+$('shopNameCancel').onclick=()=>$('shopNameOvl').classList.remove('open');
+$('shopNameOvl').addEventListener('click',e=>{if(e.target===$('shopNameOvl'))$('shopNameOvl').classList.remove('open');});
+$('shopNameSave').onclick=()=>{
+  const name=$('shopNameInp').value.trim();
+  if(!name){$('shopNameInp').style.borderColor='var(--red-hi)';return;}
+  const sub=$('shopSubInp').value.trim();
+  DB.ref('settings/shopName').set(name);
+  DB.ref('settings/shopSub').set(sub);
+  DB.ref('settings/logoFont').set(currentFont);
+  applyShopName(name,sub);
+  applyFont(currentFont);
+  $('shopNameOvl').classList.remove('open');
+};
+
+// ══════════════════════════════════════
+//  THEME / SETTINGS SHEET
+// ══════════════════════════════════════
+let currentPrimary=''; // tracks active primary for highlighting
+
+function openThemeSheet(){
+  buildThemeGrid();
+  $('themeOvl').classList.add('open');
+}
+function closeThemeSheet(){ $('themeOvl').classList.remove('open'); }
+
+function buildThemeGrid(){
+  const el=$('themeGrid'); el.innerHTML='';
+  INDUSTRIES.forEach(ind=>{
+    const btn=document.createElement('button');
+    btn.className='theme-swatch-btn'+(currentPrimary===ind.primary?' active':'');
+    btn.style.cssText=`background:${ind.primary};--accent-dot:${ind.accent}`;
+    btn.title=ind.label; // tooltip only — no visible label
+    btn.onclick=()=>{
+      applyTheme(ind.primary, ind.accent);
+      currentPrimary=ind.primary;
+      // staffLabel intentionally NOT changed — set once at setup only
+      DB.ref('settings/primaryColor').set(ind.primary);
+      DB.ref('settings/accentColor').set(ind.accent);
+      DB.ref('settings/emoji').set(ind.emoji);
+      el.querySelectorAll('.theme-swatch-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const le=$('loadingEmoji');if(le)le.textContent=ind.emoji;
+    };
+    el.appendChild(btn);
+  });
+}
+
+$('themeClose').onclick=closeThemeSheet;
+$('themeOvl').addEventListener('click',e=>{if(e.target===$('themeOvl'))closeThemeSheet();});
+$('btnTheme').onclick=openThemeSheet;
+$('langEN').onclick=()=>setLang('en');
+$('langEL').onclick=()=>setLang('el');
+
+// ══════════════════════════════════════
+//  INIT — Firebase real-time listener
+// ══════════════════════════════════════
+function fbError(err){
+  document.getElementById('fbLoading').innerHTML=`
+    <div style="font-size:32px">⚠️</div>
+    <div style="color:#ff5252;font-size:14px;font-weight:700;letter-spacing:1px;text-align:center;padding:0 24px;margin-top:4px">
+      ${t('err.connection')}
+    </div>
+    <div style="color:var(--txt2);font-size:12px;text-align:center;padding:0 28px;line-height:1.65;margin-top:6px">
+      ${err.code==='PERMISSION_DENIED'?t('err.permDenied'):err.message}
+    </div>`;
+}
+
+const fbTimeout=setTimeout(()=>{
+  if(!_fbReady)fbError({code:'TIMEOUT',message:t('err.timeout')});
+},8000);
+
+DB.ref('/').on('value',(snap)=>{
+  clearTimeout(fbTimeout);
+  const val=snap.val()||{};
+
+  // barbers
+  const rawB=val.barbers;
+  barbers=Array.isArray(rawB)?rawB.filter(Boolean):rawB?Object.values(rawB).filter(Boolean):[];
+  barbers=barbers.map((b,i)=>({...b,color:b.color||PALETTE[i%PALETTE.length]}));
+  if(barbers.length===0){
+    barbers=Array.from({length:5},(_,i)=>({id:uid(),name:`${staffLabel} ${i+1}`,color:PALETTE[i%PALETTE.length]}));
+    saveB();
+  }
+
+  // recurring
+  const rawR=val.recs;
+  recurring=Array.isArray(rawR)?rawR.filter(Boolean):rawR?Object.values(rawR).filter(Boolean):[];
+
+  // appointments
+  data=val.appts||{};
+
+  // settings
+  const settings=val.settings||{};
+  applyLogoImg(settings.logoImg||null);
+  applyShopName(settings.shopName||null,settings.shopSub||null);
+  if(settings.staffLabel) staffLabel=settings.staffLabel;
+  if(settings.logoFont){ applyFont(settings.logoFont); }
+  if(settings.lang && settings.lang!==currentLang){
+    currentLang=settings.lang;
+    WD=[...LOCALE[currentLang]?.WD||LOCALE.en.WD];
+    WD_FULL=[...LOCALE[currentLang]?.WD_FULL||LOCALE.en.WD_FULL];
+    MN=[...LOCALE[currentLang]?.MN||LOCALE.en.MN];
+  }
+  if(settings.primaryColor&&settings.accentColor){
+    applyTheme(settings.primaryColor,settings.accentColor);
+    currentPrimary=settings.primaryColor;
+  }
+  if(settings.emoji){
+    const le=$('loadingEmoji');if(le)le.textContent=settings.emoji;
+    const lt=$('loadingText');if(lt&&settings.accentColor)lt.style.color=settings.accentColor;
+  }
+
+  // First load
+  if(!_fbReady){
+    _fbReady=true;
+    applyLangToDOM();
+    const overlay=$('fbLoading');
+    if(overlay){
+      if(typeof gsap!=='undefined'){
+        gsap.to(overlay,{opacity:0,duration:.4,onComplete:()=>overlay.style.display='none'});
+      }else{
+        overlay.style.display='none';
+      }
+    }
+    if(!settings.shopName){
+      buildIndustryGrid();
+      $('setupOvl').classList.remove('hidden');
+      if(typeof gsap!=='undefined'){
+        gsap.from($('setupOvl'),{opacity:0,duration:.4,ease:'power2.out'});
+      }
+    }
+    setTimeout(scrollToNow,60);
+    setInterval(drawNowLine,60_000);
+  }
+
+  refresh();
+},fbError);
+</script>
+</body>
+</html>
