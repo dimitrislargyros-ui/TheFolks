@@ -438,7 +438,7 @@
     .wv-dhdr-dnum { font-size:14px; font-weight:800; color:var(--txt); line-height:1.2; display:inline-block; width:24px; border-radius:50%; text-align:center; }
     .wv-dhdr-col.wv-col-today .wv-dhdr-dnum { background:var(--gold); color:#0a0c10; }
     /* Grid */
-    .wv-grid { flex:1; display:flex; overflow-y:scroll; overflow-x:hidden; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:var(--border2) var(--bg); -webkit-overflow-scrolling:touch; }
+    .wv-grid { flex:1; display:flex; align-items:flex-start; overflow-y:scroll; overflow-x:hidden; scrollbar-gutter:stable; scrollbar-width:thin; scrollbar-color:var(--border2) var(--bg); -webkit-overflow-scrolling:touch; }
     .wv-grid::-webkit-scrollbar { width:4px; }
     .wv-grid::-webkit-scrollbar-track { background:var(--bg); }
     .wv-grid::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
@@ -1266,8 +1266,9 @@ function doApptSave(){
   const n=$('apptInp').value.trim();if(!n){$('apptInp').style.borderColor='var(--red-hi)';return;}
   const k=aKey(sel,pendAppt.bid,pendAppt.h,pendAppt.m);
   data[k]=makeVal(n,getSpan(data[k]??1));saveD();closeAppt();refresh();
+  if($('wvBg').classList.contains('open'))renderWeekView();
 }
-function doApptDel(){delete data[aKey(sel,pendAppt.bid,pendAppt.h,pendAppt.m)];saveD();closeAppt();refresh();}
+function doApptDel(){delete data[aKey(sel,pendAppt.bid,pendAppt.h,pendAppt.m)];saveD();closeAppt();refresh();if($('wvBg').classList.contains('open'))renderWeekView();}
 $('apptOvl').addEventListener('click',e=>{if(e.target===$('apptOvl'))closeAppt();});
 $('apptInp').addEventListener('keydown',e=>{if(e.key==='Enter')doApptSave();});
 $('apptInp').addEventListener('input',()=>{$('apptInp').style.borderColor='';});
@@ -1699,9 +1700,14 @@ function renderWeekView(){
           const sp=isExplicit(v)?getSpan(v):(rec?.span||1);
           const chip=document.createElement('div');
           chip.className='wv-chip';
-          chip.style.cssText=`background:${barber.color}28;border-left-color:${barber.color};height:${sp*SPX-5}px;`;
+          chip.style.cssText=`background:${barber.color}28;border-left-color:${barber.color};height:${sp*SPX-5}px;cursor:pointer;`;
           chip.textContent=name;
+          chip.addEventListener('click',()=>{sel=new Date(day);openApptSheet(bid,h,m,!!rec,rec?.id);});
           slot.appendChild(chip);
+        }else{
+          // Empty slot — tap to add appointment
+          slot.style.cursor='pointer';
+          slot.addEventListener('click',()=>{sel=new Date(day);openApptSheet(bid,h,m);});
         }
       }
       col.appendChild(slot);
