@@ -1246,7 +1246,9 @@ function openApptSheet(bid,h,m,isRec,recId){
   pendAppt={bid,h,m,isRec:!!isRec,recId:recId||null};
   const b=barbers.find(x=>x.id===bid)||{name:'—'},k=aKey(sel,bid,h,m),ex=data[k];
   const hh=String(h).padStart(2,'0'),mm=m===0?'00':m;
-  $('apptSub').textContent=`${hh}:${mm} · ${b.name}`;
+  const loc=currentLang==='el'?'el-GR':'en-GB';
+  const dayLbl=sel.toLocaleDateString(loc,{weekday:'short',day:'numeric',month:'short'});
+  $('apptSub').textContent=`${dayLbl} · ${hh}:${mm} · ${b.name}`;
   const hasExplicit=(k in data)&&isExplicit(data[k]);
   $('apptTtl').textContent=hasExplicit?t('appt.edit'):t('appt.new');
   const rec=isRec?recurring.find(r=>r.id===recId):null;
